@@ -1,6 +1,6 @@
 use nectar_process_lib::{
     await_message, println,
-    vfs::{self, create_drive, open_dir, Directory},
+    vfs::{self, create_drive, metadata, open_dir, Directory, FileType},
     Address, Message, ProcessId, Request, Response,
 };
 use serde::{Deserialize, Serialize};
@@ -40,7 +40,41 @@ fn handle_transfer_request(
 
     match transfer_request {
         TransferRequest::ListFiles => {
-            println!("hellö");
+            let entries = file_dir.read()?;
+            let files: Vec<FileInfo> = entries
+                .iter()
+                .filter_map(|file| match file.file_type {
+                    FileType::File => match metadata(&file.path) {
+                        Ok(metadata) => Some(FileInfo {
+                            name: file.path.clone(),
+                            size: metadata.len,
+                        }),
+                        Err(_) => None,
+                    },
+                    _ => None,
+                })
+                .collect();
+
+            Response::new()
+                .body(serde_json::to_vec(&TransferResponse::ListFiles(files))?)
+                .send()?;
+        }
+    }
+
+    Ok(())
+}
+
+fn handle_transfer_response(
+    our: &Address,
+    source: &Address,
+    body: &Vec<u8>,
+    file_dir: &Directory,
+) -> anyhow::Result<()> {
+    let transfer_response = serde_json::from_slice::<TransferResponse>(body)?;
+
+    match transfer_response {
+        TransferResponse::ListFiles(files) => {
+            println!("got files from node: {:?} ,files: {:?}", source, files);
         }
     }
 
@@ -51,8 +85,12 @@ fn handle_message(our: &Address, file_dir: &Directory) -> anyhow::Result<()> {
     let message = await_message()?;
 
     match message {
-        Message::Response { .. } => {
-            return Ok(());
+        Message::Response {
+            ref source,
+            ref body,
+            ..
+        } => {
+            handle_transfer_response(our, source, body, file_dir)?;
         }
         Message::Request {
             ref source,
