@@ -123,7 +123,7 @@ fn handle_message(
                         }
                     }
                 }
-                // request for a chunk from us.
+                // someone requesting a chunk from us.
                 WorkerRequest::Chunk {
                     name,
                     offset,

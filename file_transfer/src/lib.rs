@@ -1,7 +1,7 @@
 use nectar_process_lib::{
     await_message, our_capabilities, println, spawn,
-    vfs::{self, create_drive, metadata, open_dir, Directory, FileType},
-    Address, Message, OnExit, ProcessId, Request, Response,
+    vfs::{create_drive, metadata, open_dir, Directory, FileType},
+    Address, Message, OnExit, Request, Response,
 };
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
