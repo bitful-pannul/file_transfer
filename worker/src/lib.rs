@@ -21,58 +21,27 @@ const CHUNK_SIZE: u64 = 1048576; // 1MB
 pub enum WorkerRequest {
     Init {
         name: String,
-        target_worker: Address,
-        is_requestor: bool,
-        size: u64,
+        target_worker: Option<Address>,
     },
     Chunk {
         name: String,
         offset: u64,
         length: u64,
     },
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum WorkerResponse {
-    Chunk {
-        name: String,
-        offset: u64,
-        length: u64,
-    },
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum TransferResponse {
-    ListFiles(Vec<FileInfo>),
-    Download { name: String, worker: Address },
-    Start,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct FileInfo {
-    pub name: String,
-    pub size: u64,
+    Size(u64),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum TransferRequest {
-    ListFiles,
-    Download { name: String, target: Address },
     Progress { name: String, progress: u64 },
-}
-
-struct WorkerState {
-    target: Address,
-    is_requestor: bool,
-    file: File,
-    size: u64,
 }
 
 fn handle_message(
     our: &Address,
-    state: &mut Option<WorkerState>,
+    file: &mut Option<File>,
     files_dir: &Directory,
-) -> anyhow::Result<()> {
+    size: &mut Option<u64>,
+) -> anyhow::Result<bool> {
     let message = await_message()?;
 
     match message {
@@ -84,134 +53,115 @@ fn handle_message(
             let request = serde_json::from_slice::<WorkerRequest>(body)?;
 
             match request {
-                // initialize command from main process,
-                // sets up worker whether sender or receiver.
                 WorkerRequest::Init {
                     name,
                     target_worker,
-                    is_requestor,
-                    size,
                 } => {
-                    //  open file within files directory, create if it doesn't exist.
-                    let file = open_file(&format!("{}/{}", files_dir.path, &name), true)?;
+                    // initialize command from main process,
+                    // sets up worker, matches on if it's a sender or receiver.
+                    // target_worker = None, we are receiver, else sender.
 
-                    let new_state = WorkerState {
-                        target: target_worker.clone(),
-                        is_requestor,
-                        size,
-                        file,
-                    };
+                    // open/create empty file in both cases.
+                    let mut active_file =
+                        open_file(&format!("{}/{}", files_dir.path, &name), true)?;
 
-                    *state = Some(new_state);
+                    match target_worker {
+                        Some(target_worker) => {
+                            // we have a target, chunk the data, and send it.
+                            let size = active_file.metadata()?.len;
+                            let num_chunks = (size as f64 / CHUNK_SIZE as f64).ceil() as u64;
 
-                    // if we're the requestor, send requests to target to get chunks!
-                    if is_requestor {
-                        // round up, so if file is smaller than CHUNK_SIZE, it won't be 0.
-                        let num_chunks = (size as f64 / CHUNK_SIZE as f64).ceil() as u64;
-                        for i in 0..num_chunks {
-                            let offset = i * CHUNK_SIZE;
-                            let length = CHUNK_SIZE.min(size - offset);
-
+                            // give the receiving worker a size request so it can track it's progress!
                             Request::new()
-                                .body(serde_json::to_vec(&WorkerRequest::Chunk {
-                                    name: name.clone(),
-                                    offset,
-                                    length,
-                                })?)
+                                .body(serde_json::to_vec(&WorkerRequest::Size(size))?)
                                 .target(target_worker.clone())
-                                .expects_response(5)
                                 .send()?;
+
+                            active_file.seek(SeekFrom::Start(0))?;
+
+                            for i in 0..num_chunks {
+                                let offset = i * CHUNK_SIZE;
+                                let length = CHUNK_SIZE.min(size - offset);
+
+                                let mut buffer = vec![0; length as usize];
+                                active_file.read_at(&mut buffer)?;
+
+                                Request::new()
+                                    .body(serde_json::to_vec(&WorkerRequest::Chunk {
+                                        name: name.clone(),
+                                        offset,
+                                        length,
+                                    })?)
+                                    .target(target_worker.clone())
+                                    .blob_bytes(buffer)
+                                    .send()?;
+                            }
+                            Response::new().body(b"done".to_vec()).send()?;
+                            return Ok(true);
+                        }
+                        None => {
+                            // waiting for response, store created empty file.
+                            *file = Some(active_file);
+                            Response::new().body(b"started".to_vec()).send()?;
                         }
                     }
                 }
-                // someone requesting a chunk from us.
+                // someone sending a chunk to us!
                 WorkerRequest::Chunk {
                     name,
                     offset,
                     length,
                 } => {
-                    let state = match state {
-                        Some(state) => state,
+                    let file = match file {
+                        Some(file) => file,
                         None => {
-                            println!("file_transfer: error: no state");
-                            return Ok(());
-                        }
-                    };
-
-                    // get exact requested chunk from file.
-                    let mut buffer = vec![0; length as usize];
-
-                    state.file.seek(SeekFrom::Start(offset))?;
-                    state.file.read_at(&mut buffer)?;
-
-                    // send response, but this time with the chunk in the lazy_load_blob!
-                    let response = WorkerResponse::Chunk {
-                        name,
-                        offset,
-                        length,
-                    };
-
-                    Response::new()
-                        .body(serde_json::to_vec(&response)?)
-                        .blob_bytes(buffer)
-                        .send()?;
-                }
-            }
-        }
-        Message::Response {
-            ref source,
-            ref body,
-            ..
-        } => {
-            let response = serde_json::from_slice::<WorkerResponse>(&body)?;
-
-            match response {
-                // response for a chunk we requested.
-                WorkerResponse::Chunk {
-                    name,
-                    offset,
-                    length,
-                } => {
-                    let state = match state {
-                        Some(state) => state,
-                        None => {
-                            println!("file_transfer: error: no state");
-                            return Ok(());
+                            return Err(anyhow::anyhow!(
+                                "file_transfer: receive error: no file initialized"
+                            ));
                         }
                     };
 
                     let bytes = match get_blob() {
                         Some(blob) => blob.bytes,
                         None => {
-                            println!("file_transfer: error: no blob");
-                            return Ok(());
+                            return Err(anyhow::anyhow!("file_transfer: receive error: no blob"));
                         }
                     };
 
-                    state.file.seek(SeekFrom::Start(offset))?;
-                    state.file.write_at(&bytes)?;
+                    file.seek(SeekFrom::Start(offset))?;
+                    file.write_at(&bytes)?;
 
-                    let progress = (offset + length) / state.size * 100;
+                    // if sender has sent us a size, give a progress update to main transfer!
+                    if let Some(size) = size {
+                        let progress = (offset + length) / *size * 100;
 
-                    // send update to main process
-                    let main_app = Address {
-                        node: our.node.clone(),
-                        process: ProcessId::from_str("file_transfer:file_transfer:template.uq")?,
-                    };
+                        // send update to main process
+                        let main_app = Address {
+                            node: our.node.clone(),
+                            process: ProcessId::from_str(
+                                "file_transfer:file_transfer:template.uq",
+                            )?,
+                        };
 
-                    Request::new()
-                        .body(serde_json::to_vec(&TransferRequest::Progress {
-                            name,
-                            progress,
-                        })?)
-                        .target(&main_app)
-                        .send()?;
+                        Request::new()
+                            .body(serde_json::to_vec(&TransferRequest::Progress {
+                                name,
+                                progress,
+                            })?)
+                            .target(&main_app)
+                            .send()?;
+                    }
+                }
+                WorkerRequest::Size(incoming_size) => {
+                    *size = Some(incoming_size);
                 }
             }
-            return Ok(());
+        }
+        _ => {
+            println!("file_transfer worker: got something else than request...");
         }
     }
-    Ok(())
+    Ok(false)
 }
 
 struct Component;
@@ -224,13 +174,19 @@ impl Guest for Component {
         let drive_path = format!("{}/files", our.package_id());
         let files_dir = open_dir(&drive_path, false).unwrap();
 
-        let mut state: Option<WorkerState> = None;
+        let mut file: Option<File> = None;
+        let mut size: Option<u64> = None;
 
         loop {
-            match handle_message(&our, &mut state, &files_dir) {
-                Ok(()) => {}
+            match handle_message(&our, &mut file, &files_dir, &mut size) {
+                Ok(exit) => {
+                    if exit {
+                        println!("file_transfer worker done: exiting");
+                        break;
+                    }
+                }
                 Err(e) => {
-                    println!("file_transfer: error: {:?}", e);
+                    println!("file_transfer: worker error: {:?}", e);
                 }
             };
         }

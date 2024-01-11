@@ -24,12 +24,7 @@ pub enum TransferRequest {
 #[derive(Serialize, Deserialize, Debug)]
 pub enum TransferResponse {
     ListFiles(Vec<FileInfo>),
-    Download {
-        name: String,
-        worker: Address,
-        size: u64,
-    },
-    Start,
+    Download { name: String, worker: Address },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -42,14 +37,7 @@ pub struct FileInfo {
 pub enum WorkerRequest {
     Init {
         name: String,
-        target_worker: Address,
-        is_requestor: bool,
-        size: u64,
-    },
-    Chunk {
-        name: String,
-        offset: u64,
-        length: u64,
+        target_worker: Option<Address>,
     },
 }
 
@@ -83,87 +71,51 @@ fn handle_transfer_request(
                 .send()?;
         }
         TransferRequest::Download { name, target } => {
-            // if source == our_node, we will send a download request to the target.
-            // if not, it's a start downlaod request from another node.
-            if source.node == our.node {
-                let resp = Request::new()
-                    .body(body.clone())
-                    .target(target)
-                    .send_and_await_response(5)??;
+            // spin up a worker, initialize based on whether it's a downloader or a sender.
+            let our_worker = spawn(
+                None,
+                &format!("{}/pkg/worker.wasm", our.package_id()),
+                OnExit::None,
+                our_capabilities(),
+                vec![],
+                false,
+            )?;
 
-                let transfer_response = serde_json::from_slice::<TransferResponse>(&resp.body())?;
+            let our_worker_address = Address {
+                node: our.node.clone(),
+                process: our_worker,
+            };
 
-                match transfer_response {
-                    TransferResponse::Download { name, worker, size } => {
-                        // spin up a worker, and init it with the worker that it can use to download
-                        let our_worker = spawn(
-                            None,
-                            &format!("{}/pkg/worker.wasm", our.package_id()),
-                            OnExit::None,
-                            our_capabilities(),
-                            vec![],
-                            false,
-                        )?;
+            match source.node == our.node {
+                true => {
+                    // we want to download a file
+                    let _resp = Request::new()
+                        .body(serde_json::to_vec(&WorkerRequest::Init {
+                            name: name.clone(),
+                            target_worker: None,
+                        })?)
+                        .target(&our_worker_address)
+                        .send_and_await_response(5)??;
 
-                        let our_worker_address = Address {
-                            node: our.node.clone(),
-                            process: our_worker,
-                        };
-
-                        Request::new()
-                            .body(serde_json::to_vec(&WorkerRequest::Init {
-                                name: name.clone(),
-                                target_worker: worker,
-                                is_requestor: true,
-                                size,
-                            })?)
-                            .target(our_worker_address)
-                            .send()?;
-                    }
-                    _ => {
-                        println!(
-                            "file_transfer: got something else as response to download request!"
-                        );
-                    }
+                    // send our initialized worker address to the other node
+                    Request::new()
+                        .body(serde_json::to_vec(&TransferRequest::Download {
+                            name: name.clone(),
+                            target: our_worker_address,
+                        })?)
+                        .target(&target)
+                        .send()?;
                 }
-            } else {
-                // download request from remote node.
-                // spin up our worker, requestor = false
-                let our_worker = spawn(
-                    None,
-                    &format!("{}/pkg/worker.wasm", our.package_id()),
-                    OnExit::None,
-                    our_capabilities(),
-                    vec![],
-                    false,
-                )?;
-
-                let our_worker_address = Address {
-                    node: our.node.clone(),
-                    process: our_worker,
-                };
-
-                let size = metadata(&format!("{}/{}", files_dir.path, &name))?.len;
-
-                // initialize it
-                let _resp = Request::new()
-                    .body(serde_json::to_vec(&WorkerRequest::Init {
-                        name: name.clone(),
-                        target_worker: target,
-                        is_requestor: false,
-                        size,
-                    })?)
-                    .target(&our_worker_address)
-                    .send()?;
-
-                // now send response to source with our worker!
-                Response::new()
-                    .body(serde_json::to_vec(&TransferResponse::Download {
-                        name,
-                        worker: our_worker_address,
-                        size,
-                    })?)
-                    .send()?;
+                false => {
+                    // they want to download a file
+                    Request::new()
+                        .body(serde_json::to_vec(&WorkerRequest::Init {
+                            name: name.clone(),
+                            target_worker: Some(target),
+                        })?)
+                        .target(&our_worker_address)
+                        .send()?;
+                }
             }
         }
         TransferRequest::Progress { name, progress } => {
@@ -174,21 +126,14 @@ fn handle_transfer_request(
     Ok(())
 }
 
-fn handle_transfer_response(
-    our: &Address,
-    source: &Address,
-    body: &Vec<u8>,
-    files_dir: &Directory,
-) -> anyhow::Result<()> {
+fn handle_transfer_response(source: &Address, body: &Vec<u8>) -> anyhow::Result<()> {
     let transfer_response = serde_json::from_slice::<TransferResponse>(body)?;
 
     match transfer_response {
         TransferResponse::ListFiles(files) => {
             println!("got files from node: {:?} ,files: {:?}", source, files);
         }
-        _ => {
-            println!("start and download responses are handled in-line.");
-        }
+        _ => {}
     }
 
     Ok(())
@@ -203,7 +148,7 @@ fn handle_message(our: &Address, files_dir: &Directory) -> anyhow::Result<()> {
             ref body,
             ..
         } => {
-            handle_transfer_response(our, source, body, files_dir)?;
+            handle_transfer_response(source, body)?;
         }
         Message::Request {
             ref source,
