@@ -686,11 +686,7 @@ Message::Response {
 }
 ```
 
-There you have it! we also send a progress report back to the main app after getting a successful chunk!
-
-Here's the worker in it's entirety, you won't need an extra manifest entry as it's spawned by us, we give it capabilities that we obtained through installing the app.
-
-Try and run it, you can download a file with the command `/m our@file_transfer:file_transfer:template.nec {"Download": {"name": "dawg.jpeg", "target": "buenosaires.nec@file_transfer:file_transfer:template.nec"}}`, replacing node name and picture name!
+Bam! Here's the worker in it's entirety:
 
 ```rust
 use serde::{Deserialize, Serialize};
@@ -931,3 +927,9 @@ impl Guest for Component {
     }
 }
 ```
+
+### End of part 1
+
+And there you have it!
+
+Try and run it, you can download a file with the command `/m our@file_transfer:file_transfer:template.nec {"Download": {"name": "dawg.jpeg", "target": "buenosaires.nec@file_transfer:file_transfer:template.nec"}}`, replacing node name and picture name!
