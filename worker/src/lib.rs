@@ -119,6 +119,7 @@ fn handle_message(
                                     length,
                                 })?)
                                 .target(target_worker.clone())
+                                .expects_response(5)
                                 .send()?;
                         }
                     }
