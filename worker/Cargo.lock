@@ -163,7 +163,7 @@ dependencies = [
 [[package]]
 name = "nectar_process_lib"
 version = "0.5.0"
-source = "git+ssh://git@github.com/uqbar-dao/process_lib.git?rev=412fbfe#412fbfeb4541bc3006bfa5db9d8e4017f1a32b22"
+source = "git+ssh://git@github.com/uqbar-dao/process_lib.git?rev=a2d3e9e#a2d3e9e880371c57ed0488a3856327a3b712c922"
 dependencies = [
  "anyhow",
  "bincode",

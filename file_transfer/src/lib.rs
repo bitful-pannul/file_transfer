@@ -15,12 +15,6 @@ wit_bindgen::generate!({
 });
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct FileInfo {
-    pub name: String,
-    pub size: u64,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub enum TransferRequest {
     ListFiles,
     Download { name: String, target: Address },
@@ -36,6 +30,12 @@ pub enum TransferResponse {
         size: u64,
     },
     Start,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct FileInfo {
+    pub name: String,
+    pub size: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

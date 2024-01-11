@@ -1,9 +1,12 @@
-This cookbook entry assumes a basic understanding of the nectar process building system, requests and responses, and some rudimentary knowledge of rust syntax.
-Also having tried out necdev will help!
+# File Transfer
 
-### Start
+In this entry we're going to be building a file transfer app, letting nodes download files from a public directory. It will use the vfs to read and write files, and will spin up worker processes for the transfer.
 
-First we initialize with uqdev new file_transfer
+This guide assumes a basic understanding of nectar process building, some familiarity with necdev, requests and responses, and some knowledge of rust syntax.
+
+## Start
+
+First let's initialize a new project with `necdev new file_transfer`
 
 I cleaned out the template code so we have a complete fresh start:
 
