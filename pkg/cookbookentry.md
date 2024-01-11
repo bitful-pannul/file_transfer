@@ -928,8 +928,10 @@ impl Guest for Component {
 }
 ```
 
-### End of part 1
+### Conclusion file_transfer (NO_UI)
 
 And there you have it!
 
 Try and run it, you can download a file with the command `/m our@file_transfer:file_transfer:template.nec {"Download": {"name": "dawg.jpeg", "target": "buenosaires.nec@file_transfer:file_transfer:template.nec"}}`, replacing node name and picture name!
+
+Stay tuned for additions to this guide, including restarting transfers after rebooting your node or losing connections, and a simple UI!
