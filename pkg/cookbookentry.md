@@ -516,7 +516,8 @@ impl Guest for Component {
 }
 ```
 
-The handle_message function will handle 3 types. Requests Init and Chunk. Init runs once, received from the spawner. Chunk is a request from another node for a specific chunk.
+The handle_message function will handle 3 types. Requests Init and Chunk, and Response Chunk. Let's do the requests first.
+Init runs once, received from the spawner:
 
 ```rust
 fn handle_message(
@@ -590,7 +591,7 @@ So upon init, we message the other main app and get back it's worker address and
 
 Then we need to handle the chunk requests and responses.
 
-Requests will look like this:
+WorkerRequest::Chunk will look like this:
 
 ```rust
 // someone requesting a chunk from us.
