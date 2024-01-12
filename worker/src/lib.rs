@@ -19,7 +19,7 @@ const CHUNK_SIZE: u64 = 1048576; // 1MB
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum WorkerRequest {
-    Init {
+    Initialize {
         name: String,
         target_worker: Option<Address>,
     },
@@ -53,7 +53,7 @@ fn handle_message(
             let request = serde_json::from_slice::<WorkerRequest>(body)?;
 
             match request {
-                WorkerRequest::Init {
+                WorkerRequest::Initialize {
                     name,
                     target_worker,
                 } => {
@@ -130,9 +130,8 @@ fn handle_message(
                         }
                     };
 
-                    file.seek(SeekFrom::Start(offset))?;
-                    file.write_at(&bytes)?;
-
+                    // file.seek(SeekFrom::Start(offset))?; seek not necessary if the sends come in order.
+                    file.write_all(&bytes)?;
                     // if sender has sent us a size, give a progress update to main transfer!
                     if let Some(size) = size {
                         let progress = ((offset + length) as f64 / *size as f64 * 100.0) as u64;
@@ -152,6 +151,11 @@ fn handle_message(
                             })?)
                             .target(&main_app)
                             .send()?;
+
+                        if progress >= 100 {
+                            Response::new().body(serde_json::to_vec(&"Done")?).send()?;
+                            return Ok(true);
+                        }
                     }
                 }
                 WorkerRequest::Size(incoming_size) => {
@@ -170,6 +174,7 @@ struct Component;
 impl Guest for Component {
     fn init(our: String) {
         println!("file_transfer worker: begin");
+        let start = std::time::Instant::now();
 
         let our = Address::from_str(&our).unwrap();
 
@@ -183,7 +188,10 @@ impl Guest for Component {
             match handle_message(&our, &mut file, &files_dir, &mut size) {
                 Ok(exit) => {
                     if exit {
-                        println!("file_transfer worker done: exiting");
+                        println!(
+                            "file_transfer worker done: exiting, took {:?}",
+                            start.elapsed()
+                        );
                         break;
                     }
                 }

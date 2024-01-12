@@ -37,7 +37,7 @@ pub struct FileInfo {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum WorkerRequest {
-    Init {
+    Initialize {
         name: String,
         target_worker: Option<Address>,
     },
@@ -92,7 +92,7 @@ fn handle_transfer_request(
                 true => {
                     // we want to download a file
                     let _resp = Request::new()
-                        .body(serde_json::to_vec(&WorkerRequest::Init {
+                        .body(serde_json::to_vec(&WorkerRequest::Initialize {
                             name: name.clone(),
                             target_worker: None,
                         })?)
@@ -111,7 +111,7 @@ fn handle_transfer_request(
                 false => {
                     // they want to download a file
                     Request::new()
-                        .body(serde_json::to_vec(&WorkerRequest::Init {
+                        .body(serde_json::to_vec(&WorkerRequest::Initialize {
                             name: name.clone(),
                             target_worker: Some(target),
                         })?)
