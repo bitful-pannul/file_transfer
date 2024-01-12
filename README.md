@@ -1,11 +1,13 @@
 # File Transfer
 
+[todo link to cookbook entry]
+
 ## Example commands
 
 ### List files from node
 
-`/m buenosaires.nec@file_transfer:file_transfer:template.nec "ListFiles"`
+```/m riodejaneiro.nec@file_transfer:file_transfer:template.nec "ListFiles"```
 
 ### Download a file from node
 
-`/m our@file_transfer:file_transfer:template.nec {"Download": {"name": "dawg.jpeg", "target": "buenosaires.nec@file_transfer:file_transfer:template.nec"}}`
+```/m our@file_transfer:file_transfer:template.nec {"Download": {"name": "greco.mp4", "target": "riodejaneiro.nec@file_transfer:file_transfer:template.nec"}}```
