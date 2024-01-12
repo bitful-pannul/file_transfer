@@ -25,6 +25,8 @@ pub enum TransferRequest {
 pub enum TransferResponse {
     ListFiles(Vec<FileInfo>),
     Download { name: String, worker: Address },
+    Done,
+    Started,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -119,7 +121,7 @@ fn handle_transfer_request(
             }
         }
         TransferRequest::Progress { name, progress } => {
-            println!("file: {} progress: {}", name, progress);
+            println!("file: {} progress: {}%", name, progress);
         }
     }
 

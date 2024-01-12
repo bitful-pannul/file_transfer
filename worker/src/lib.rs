@@ -96,13 +96,15 @@ fn handle_message(
                                     .blob_bytes(buffer)
                                     .send()?;
                             }
-                            Response::new().body(b"done".to_vec()).send()?;
+                            Response::new().body(serde_json::to_vec(&"Done")?).send()?;
                             return Ok(true);
                         }
                         None => {
                             // waiting for response, store created empty file.
                             *file = Some(active_file);
-                            Response::new().body(b"started".to_vec()).send()?;
+                            Response::new()
+                                .body(serde_json::to_vec(&"Started")?)
+                                .send()?;
                         }
                     }
                 }
@@ -133,13 +135,13 @@ fn handle_message(
 
                     // if sender has sent us a size, give a progress update to main transfer!
                     if let Some(size) = size {
-                        let progress = (offset + length) / *size * 100;
+                        let progress = ((offset + length) as f64 / *size as f64 * 100.0) as u64;
 
                         // send update to main process
                         let main_app = Address {
                             node: our.node.clone(),
                             process: ProcessId::from_str(
-                                "file_transfer:file_transfer:template.uq",
+                                "file_transfer:file_transfer:template.nec",
                             )?,
                         };
 
