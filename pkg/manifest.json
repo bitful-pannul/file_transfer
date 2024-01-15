@@ -6,7 +6,8 @@
         "request_networking": true,
         "request_capabilities": [
             "net:sys:nectar",
-            "vfs:sys:nectar"
+            "vfs:sys:nectar",
+	    "http_server:sys:nectar"
         ],
         "grant_capabilities": [],
         "public": true
