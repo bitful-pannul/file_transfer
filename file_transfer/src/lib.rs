@@ -50,10 +50,7 @@ pub enum WorkerRequest {
     },
 }
 
-fn ls_files() -> anyhow::Result<Vec<FileInfo>> {
-    let drive_path = create_drive(PackageId::from_str("file_transfer")?, "files")?;
-    let files_dir = open_dir(&drive_path, false)?;
-
+fn ls_files(files_dir: &Directory) -> anyhow::Result<Vec<FileInfo>> {
     let entries = files_dir.read()?;
     let files: Vec<FileInfo> = entries
         .iter()
@@ -82,7 +79,7 @@ fn ls_files() -> anyhow::Result<Vec<FileInfo>> {
 //         if let Some(filename) = field.headers.filename.clone() {
 //             let mut buffer = Vec::new();
 //             field.data.read_to_end(&mut buffer)?;
-//             print_to_terminal(1, format!("Received file {} with size {}", filename, buffer.len()).as_str());
+//             println!(format!("Received file {} with size {}", filename, buffer.len()).as_str());
 //         }
 //     }
 
@@ -96,11 +93,12 @@ fn handle_transfer_request(
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
+    println!("file_transfer: got transfer request");
     let transfer_request = serde_json::from_slice::<TransferRequest>(body)?;
 
     match transfer_request {
         TransferRequest::ListFiles => {
-            let files = ls_files()?;
+            let files = ls_files(files_dir)?;
 
             Response::new()
                 .body(serde_json::to_vec(&TransferResponse::ListFiles(files))?)
@@ -188,6 +186,7 @@ fn handle_http_request(
     files_dir: &Directory,
     our_channel_id: &mut u32,
 ) -> anyhow::Result<()> {
+    println!("file_transfer: got http request");
     let http_request = serde_json::from_slice::<HttpServerRequest>(body)?;
 
     match http_request {
@@ -215,7 +214,7 @@ fn handle_http_request(
                         handle_transfer_response(source, &resp.body().to_vec(), true)?;
                     }
 
-                    let files = ls_files()?;
+                    let files = ls_files(files_dir)?;
                     let mut headers = HashMap::new();
                     headers.insert("Content-Type".to_string(), "application/json".to_string());
 
@@ -226,7 +225,7 @@ fn handle_http_request(
                 "POST" => {
                     // upload a file
                     if source.node != our.node {
-                        print_to_terminal(1, "file_transfer: error: cannot upload file from another node");
+                        println!("file_transfer: error: cannot upload file from another node");
                         return Ok(());
                     }
 
@@ -249,6 +248,8 @@ fn handle_http_request(
 }
 
 fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
+    println!("file_transfer: got transfer response");
+
     let transfer_response = serde_json::from_slice::<TransferResponse>(body)?;
 
     match transfer_response {
@@ -275,6 +276,8 @@ fn handle_message(
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
+    println!("file_transfer: got message");
+
     let message = await_message()?;
 
     let http_server_address = ProcessId::from_str("http_server:sys:nectar").unwrap();
