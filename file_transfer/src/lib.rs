@@ -2,15 +2,16 @@ use nectar_process_lib::{
     await_message,
     http::{
         bind_http_path, bind_http_static_path, bind_ws_path, send_response, send_ws_push,
-        HttpServerRequest, IncomingHttpRequest, StatusCode, WsMessageType,
+        HttpServerRequest, IncomingHttpRequest, StatusCode, WsMessageType, serve_ui,
     },
     our_capabilities, println, spawn,
-    vfs::{create_drive, metadata, open_dir, Directory, FileType},
-    Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response,
+    vfs::{create_drive, metadata, open_dir, Directory, FileType, create_file},
+    Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response, print_to_terminal, PackageId,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
+use multipart::server::Multipart;
 
 wit_bindgen::generate!({
     path: "wit",
@@ -49,6 +50,45 @@ pub enum WorkerRequest {
     },
 }
 
+fn ls_files() -> anyhow::Result<Vec<FileInfo>> {
+    let drive_path = create_drive(PackageId::from_str("file_transfer")?, "files")?;
+    let files_dir = open_dir(&drive_path, false)?;
+
+    let entries = files_dir.read()?;
+    let files: Vec<FileInfo> = entries
+        .iter()
+        .filter_map(|file| match file.file_type {
+            FileType::File => match metadata(&file.path) {
+                Ok(metadata) => Some(FileInfo {
+                    name: file.path.clone(),
+                    size: metadata.len,
+                }),
+                Err(_) => None,
+            },
+            _ => None,
+        })
+        .collect();
+
+    Ok(files)
+}
+
+// fn parse_files_from_form(data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+//     let boundary = Multipart::boundary_from_content_type("multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW")
+//         .ok_or("Failed to get boundary")?;
+
+//     let mut multipart = Multipart::with_body(data, boundary);
+
+//     while let Some(mut field) = multipart.read_entry()? {
+//         if let Some(filename) = field.headers.filename.clone() {
+//             let mut buffer = Vec::new();
+//             field.data.read_to_end(&mut buffer)?;
+//             print_to_terminal(1, format!("Received file {} with size {}", filename, buffer.len()).as_str());
+//         }
+//     }
+
+//     Ok(())
+// }
+
 fn handle_transfer_request(
     our: &Address,
     source: &Address,
@@ -60,20 +100,7 @@ fn handle_transfer_request(
 
     match transfer_request {
         TransferRequest::ListFiles => {
-            let entries = files_dir.read()?;
-            let files: Vec<FileInfo> = entries
-                .iter()
-                .filter_map(|file| match file.file_type {
-                    FileType::File => match metadata(&file.path) {
-                        Ok(metadata) => Some(FileInfo {
-                            name: file.path.clone(),
-                            size: metadata.len,
-                        }),
-                        Err(_) => None,
-                    },
-                    _ => None,
-                })
-                .collect();
+            let files = ls_files()?;
 
             Response::new()
                 .body(serde_json::to_vec(&TransferResponse::ListFiles(files))?)
@@ -188,27 +215,21 @@ fn handle_http_request(
                         handle_transfer_response(source, &resp.body().to_vec(), true)?;
                     }
 
-                    let entries = files_dir.read()?;
-                    let files: Vec<FileInfo> = entries
-                        .iter()
-                        .filter_map(|file| match file.file_type {
-                            FileType::File => match metadata(&file.path) {
-                                Ok(metadata) => Some(FileInfo {
-                                    name: file.path.clone(),
-                                    size: metadata.len,
-                                }),
-                                Err(_) => None,
-                            },
-                            _ => None,
-                        })
-                        .collect();
-
+                    let files = ls_files()?;
                     let mut headers = HashMap::new();
                     headers.insert("Content-Type".to_string(), "application/json".to_string());
 
                     let body = serde_json::to_vec(&TransferResponse::ListFiles(files))?;
 
                     send_response(StatusCode::OK, Some(headers), body)?;
+                }
+                "POST" => {
+                    // upload a file
+                    if source.node != our.node {
+                        print_to_terminal(1, "file_transfer: error: cannot upload file from another node");
+                        return Ok(());
+                    }
+
                 }
                 _ => {}
             }
@@ -301,7 +322,8 @@ impl Guest for Component {
         let drive_path = create_drive(our.package_id(), "files").unwrap();
         let files_dir = open_dir(&drive_path, false).unwrap();
 
-        bind_http_path("/", false, true).unwrap();
+        serve_ui(&our, &"ui").unwrap();
+        bind_http_path("/files", false, true).unwrap();
         bind_ws_path("/", false, false).unwrap();
 
         let mut channel_id: u32 = 69;
