@@ -272,7 +272,7 @@ fn handle_message(
 
     let message = await_message()?;
 
-    let http_server_address = ProcessId::from_str("http_server:sys:nectar").unwrap();
+    let http_server_address = ProcessId::from_str("http_server:distro:sys").unwrap();
 
     match message {
         Message::Response {
