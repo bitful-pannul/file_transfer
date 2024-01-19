@@ -1,8 +1,11 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import KinoFile from '../types/KinoFile'
 
 export interface FileTransferStore {
   handleWsMessage: (message: string) => void
+  files: KinoFile[]
+  setFiles: (files: KinoFile[]) => void
   set: (partial: FileTransferStore | Partial<FileTransferStore>) => void
 }
 
@@ -11,7 +14,8 @@ export interface FileTransferStore {
 const useFileTransferStore = create<FileTransferStore>()(
   persist(
     (set, get) => ({
-      games: {},
+      files: [],
+      setFiles: (files) => set({ files }),    
       handleWsMessage: (json: string | Blob) => {
         if (typeof json === 'string') {
           try {

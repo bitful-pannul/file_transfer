@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import FileEntry from './FileEntry';
+import MyFiles from './components/MyFiles'
 import KinoFile from './types/KinoFile';
 import UqbarEncryptorApi from '@uqbar/client-encryptor-api'
 import useFileTransferStore from './store/fileTransferStore';
+import SearchFiles from './components/SearchFiles';
 
 declare global {
   var window: Window & typeof globalThis;
@@ -13,9 +14,8 @@ declare global {
 let inited = false 
 
 function App() {
-  const [files, setFiles] = useState<KinoFile[]>([])
   const [filesToUpload, setFilesToUpload] = useState<File[]>([])
-  const { handleWsMessage } = useFileTransferStore();
+  const { files, setFiles, handleWsMessage } = useFileTransferStore();
 
   const BASE_URL = import.meta.env.BASE_URL;
   const PROXY_TARGET = `${(import.meta.env.VITE_NODE_URL || "http://localhost:8080")}${BASE_URL}`;
@@ -76,13 +76,13 @@ function App() {
   }
 
   return (
-    <div className='flex'>
+    <div className='flex text-white'>
       <div className='flex flex-col w-1/4 bg-gray-800 h-screen sidebar'>
-        <h2 className='text-2xl font-bold text-white px-2 py-1'>Kino Files</h2>
+        <h2 className='text-2xl font-bold px-2 py-1'>Kino Files</h2>
         <div className='flex flex-col mt-4'>
-          <h3 className='text-xl font-bold text-white px-2 py-1'>Upload</h3>
+          <h3 className='text-xl font-bold px-2 py-1'>Upload</h3>
           <div className='flex flex-col px-2 py-1'>
-            <label htmlFor='files' className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded cursor-pointer'>
+            <label htmlFor='files' className='bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded cursor-pointer text-center'>
               Choose Files
               <input id='files' type='file' hidden multiple onChange={onAddFiles} />
             </label>
@@ -90,24 +90,20 @@ function App() {
             {filesToUpload.length > 0 && (
               <div className='flex flex-col px-2 py-1'>
                 <div className='flex flex-row justify-between px-2 py-1'>
-                  <span className='text-white'>{filesToUpload.length} files selected</span>
-                  <span className='text-white'>{filesToUpload.reduce((acc, file) => acc + file.size, 0)}</span>
+                  <span>{filesToUpload.length} files selected</span>
+                  <span>{filesToUpload.reduce((acc, file) => acc + file.size, 0)}</span>
                 </div>
-                <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded' onClick={onUploadFiles}>
+                <button className='bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded' onClick={onUploadFiles}>
                   Upload
                 </button>
               </div>
             )}
           </div>
+          <MyFiles files={files} />
         </div>
       </div>
-      <div className='flex flex-col w-3/4 bg-gray-900 h-screen content'>
-        <h2 className='text-2xl font-bold text-white px-2 py-1'>My Files</h2>
-        <div className='flex flex-col mt-4'>
-          {files.length === 0
-            ? <span className='text-white'>No files... yet.</span>
-            : files.map((file, index) => <FileEntry key={index} file={file} />)}
-        </div>
+      <div className='flex flex-col w-3/4 bg-gray-900 h-screen content px-2 py-1'>
+        <SearchFiles baseUrl={BASE_URL} />
       </div>
     </div>
   )
