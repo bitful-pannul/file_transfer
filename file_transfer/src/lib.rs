@@ -1,17 +1,16 @@
-use nectar_process_lib::{
+use kinode_process_lib::{
     await_message,
     http::{
-        bind_http_path, bind_http_static_path, bind_ws_path, send_response, send_ws_push,
-        HttpServerRequest, IncomingHttpRequest, StatusCode, WsMessageType, serve_ui,
+        bind_http_path, bind_http_static_path, bind_ws_path, send_response, send_ws_push, serve_ui,
+        HttpServerRequest, IncomingHttpRequest, StatusCode, WsMessageType,
     },
-    our_capabilities, println, spawn,
-    vfs::{create_drive, metadata, open_dir, Directory, FileType, create_file},
-    Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response, print_to_terminal, PackageId,
+    our_capabilities, print_to_terminal, println, spawn,
+    vfs::{create_drive, create_file, metadata, open_dir, Directory, FileType},
+    Address, LazyLoadBlob, Message, OnExit, PackageId, ProcessId, Request, Response,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
-use multipart::server::Multipart;
 
 wit_bindgen::generate!({
     path: "wit",
@@ -190,17 +189,11 @@ fn handle_http_request(
     let http_request = serde_json::from_slice::<HttpServerRequest>(body)?;
 
     match http_request {
-        HttpServerRequest::Http(IncomingHttpRequest {
-            method,
-            raw_path,
-            headers,
-            query_params,
-            ..
-        }) => {
-            match method.as_str() {
+        HttpServerRequest::Http(request) => {
+            match request.method()?.as_str() {
                 "GET" => {
                     // /?node=akira.os
-                    if let Some(remote_node) = query_params.get("node") {
+                    if let Some(remote_node) = request.query_params().get("node") {
                         let remote_node = Address {
                             node: remote_node.clone(),
                             process: our.process.clone(),
@@ -228,7 +221,6 @@ fn handle_http_request(
                         println!("file_transfer: error: cannot upload file from another node");
                         return Ok(());
                     }
-
                 }
                 _ => {}
             }

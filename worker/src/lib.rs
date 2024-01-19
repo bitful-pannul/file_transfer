@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-use nectar_process_lib::{
+use kinode_process_lib::{
     await_message, get_blob, println,
     vfs::{open_dir, open_file, Directory, File, SeekFrom},
     Address, Message, ProcessId, Request, Response,
