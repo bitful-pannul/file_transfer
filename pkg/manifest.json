@@ -5,8 +5,8 @@
         "on_exit": "Restart",
         "request_networking": true,
         "request_capabilities": [
-            "net:sys:nectar",
-            "vfs:sys:nectar"
+            "net:distro:sys",
+            "vfs:distro:sys"
         ],
         "grant_capabilities": [],
         "public": true

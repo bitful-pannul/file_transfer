@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-use nectar_process_lib::{
+use kinode_process_lib::{
     await_message, get_blob, println,
     vfs::{open_dir, open_file, Directory, File, SeekFrom},
     Address, Message, ProcessId, Request, Response,
@@ -140,7 +140,7 @@ fn handle_message(
                         let main_app = Address {
                             node: our.node.clone(),
                             process: ProcessId::from_str(
-                                "file_transfer:file_transfer:template.nec",
+                                "file_transfer:file_transfer:template.os",
                             )?,
                         };
 

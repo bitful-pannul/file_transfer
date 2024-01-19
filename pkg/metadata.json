@@ -1,5 +1,9 @@
 {
     "package": "file_transfer",
-    "publisher": "template.nec",
-    "version": [0, 1, 0]
+    "publisher": "template.os",
+    "version": [
+        0,
+        1,
+        0
+    ]
 }

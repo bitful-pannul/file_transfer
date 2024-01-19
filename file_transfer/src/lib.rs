@@ -1,4 +1,4 @@
-use nectar_process_lib::{
+use kinode_process_lib::{
     await_message, our_capabilities, println, spawn,
     vfs::{create_drive, metadata, open_dir, Directory, FileType},
     Address, Message, OnExit, Request, Response,
