@@ -9,3 +9,4 @@ pkg/ui
 */process_env
 ui/dist
 ui/node_modules
+node_modules

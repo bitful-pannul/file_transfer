@@ -2,18 +2,41 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import FileEntry from './FileEntry';
 import KinoFile from './types/KinoFile';
+import UqbarEncryptorApi from '@uqbar/client-encryptor-api'
+import useFileTransferStore from './store/fileTransferStore';
 
 declare global {
   var window: Window & typeof globalThis;
   var our: { node: string, process: string };
 }
 
+let inited = false 
+
 function App() {
   const [files, setFiles] = useState<KinoFile[]>([])
   const [filesToUpload, setFilesToUpload] = useState<File[]>([])
+  const { handleWsMessage } = useFileTransferStore();
 
   const BASE_URL = import.meta.env.BASE_URL;
+  const PROXY_TARGET = `${(import.meta.env.VITE_NODE_URL || "http://localhost:8080")}${BASE_URL}`;
+  const WEBSOCKET_URL = import.meta.env.DEV
+  ? `${PROXY_TARGET.replace('http', 'ws')}`
+  : undefined;
+
   if (window.our) window.our.process = BASE_URL?.replace("/", "");
+
+  useEffect(() => {
+    if (!inited) {
+      inited = true
+
+      new UqbarEncryptorApi({
+        uri: WEBSOCKET_URL,
+        nodeId: window.our.node,
+        processId: window.our.process,
+        onMessage: handleWsMessage
+      });
+    }
+  }, []) 
 
   useEffect(() => {
     refreshFiles()
