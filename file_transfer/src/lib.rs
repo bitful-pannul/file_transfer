@@ -33,6 +33,8 @@ pub enum TransferResponse {
     Download { name: String, worker: Address },
     Done,
     Started,
+    Ok,  // WS response
+    Err, // WS response
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -92,7 +94,6 @@ fn handle_transfer_request(
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
-    println!("file_transfer: got transfer request");
     let transfer_request = serde_json::from_slice::<TransferRequest>(body)?;
 
     match transfer_request {
@@ -185,7 +186,6 @@ fn handle_http_request(
     files_dir: &Directory,
     our_channel_id: &mut u32,
 ) -> anyhow::Result<()> {
-    println!("file_transfer: got http request");
     let http_request = serde_json::from_slice::<HttpServerRequest>(body)?;
 
     match http_request {
@@ -233,15 +233,13 @@ fn handle_http_request(
             channel_id,
             message_type,
         } => {
-            handle_transfer_request(our, source, &body, files_dir, our_channel_id)?;
+            // handle_transfer_request(our, source, &body, files_dir, our_channel_id)?;
         }
     }
     Ok(())
 }
 
 fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
-    println!("file_transfer: got transfer response");
-
     let transfer_response = serde_json::from_slice::<TransferResponse>(body)?;
 
     match transfer_response {
@@ -268,8 +266,6 @@ fn handle_message(
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
-    println!("file_transfer: got message");
-
     let message = await_message()?;
 
     let http_server_address = ProcessId::from_str("http_server:distro:sys").unwrap();
@@ -279,9 +275,7 @@ fn handle_message(
             ref source,
             ref body,
             ..
-        } => {
-            handle_transfer_response(source, body, false)?;
-        }
+        } => handle_transfer_response(source, body, false),
         Message::Request {
             ref source,
             ref body,
@@ -289,12 +283,11 @@ fn handle_message(
         } => {
             if source.process == http_server_address {
                 handle_http_request(&our, source, body, files_dir, channel_id)?;
+                return Ok(());
             }
-            handle_transfer_request(&our, source, body, files_dir, channel_id)?;
+            handle_transfer_request(&our, source, body, files_dir, channel_id)
         }
-    };
-
-    Ok(())
+    }
 }
 
 /// step 1. bind http path / central UI
