@@ -140,7 +140,7 @@ fn handle_message(
                         let main_app = Address {
                             node: our.node.clone(),
                             process: ProcessId::from_str(
-                                "file_transfer:file_transfer:template.nec",
+                                "file_transfer:file_transfer:template.os",
                             )?,
                         };
 
