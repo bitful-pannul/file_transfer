@@ -34,7 +34,9 @@ const useFileTransferStore = create<FileTransferStore>()(
             const { kind, data } = JSON.parse(json) as WsMessage;
             if (kind === 'progress') {
               const { name, progress } = data
-              setFilesInProgress({ ...filesInProgress, [name]: progress })
+              const fip = { ...filesInProgress, [name]: progress }
+              console.log({ fip })
+              setFilesInProgress(fip)
             }
           } catch (error) {
             console.error("Error parsing WebSocket message", error);
@@ -65,7 +67,7 @@ const useFileTransferStore = create<FileTransferStore>()(
     }),
     {
       name: 'file_transfer', // unique name
-      storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
+      storage: createJSONStorage(() => sessionStorage), // (optional) by default, 'localStorage' is used
     }
   )
 )

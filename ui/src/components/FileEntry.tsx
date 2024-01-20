@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import KinoFile from "../types/KinoFile";
 import useFileTransferStore from "../store/fileTransferStore";
+import classNames from "classnames";
 
 interface Props {
     file: KinoFile
@@ -35,11 +36,8 @@ function FileEntry({ file, showDownload, node }: Props) {
         api.send({
             data: {
                 Download: {
-                    name: file.name,
-                    target: {
-                        node,
-                        process: window.our.process,
-                    }
+                    name: actualFilename,
+                    target: `${node}@${window.our.process}`
                 }
             }
         })
@@ -47,35 +45,38 @@ function FileEntry({ file, showDownload, node }: Props) {
 
     useEffect(() => {
         if (!ourFiles) return;
-        const foundFile = ourFiles.find((f) => f.name === file.name);
+        const foundFile = ourFiles.find((f) => f.name.match(file.name));
         if (foundFile) {
             setIsOurFile(true);
         }
     }, [ourFiles])
 
-    const downloadInfo = Object.entries(filesInProgress).find(([key, _]) => key.match(file.name));
+    console.log({ ourFiles, filesInProgress })
+    const downloadInfo = Object.entries(filesInProgress).find(([key, _]) => file.name.match(key));
     const downloadInProgress = (downloadInfo?.[1] || 100) < 100;
-    const downloadButton = isOurFile 
-        ? <button disabled
-                className='bg-gray-800 font-bold py-2 px-4 rounded ml-2'
-            >
-                {downloadInProgress 
-                    ? <span>{downloadInfo?.[1]}%</span>
-                    : 'Saved'}
-            </button>
-        : <button
-        className='bg-green-800 hover:bg-blue-700 font-bold py-2 px-4 rounded ml-2'
-        onClick={onDownload}
-    >
-        Save to node
-    </button>
-
+    const downloadComplete = (downloadInfo?.[1] || 0) === 100;
+    console.log ({ downloadInProgress, downloadInfo})
 
     return (
     <div className='flex flex-row px-2 py-1 justify-between place-items-center'>
         <span className='break-all grow mr-1'>{actualFilename}</span>
         <span>{actualFileSize}</span>
-        {showDownload && downloadButton}
+        {showDownload && <button 
+            disabled={isOurFile || downloadInProgress || downloadComplete}
+            className={classNames('font-bold py-2 px-4 rounded ml-2', {
+            isOurFile, downloadInProgress, downloadComplete, 
+            'bg-gray-800': isOurFile || downloadInProgress || downloadComplete, 
+            'bg-blue-500 hover:bg-blue-700': !isOurFile && !downloadInProgress && !downloadComplete, })}
+            onClick={onDownload}
+        >
+            {isOurFile
+                ? 'Saved'
+                : downloadComplete 
+                    ? 'Saved'
+                    : downloadInProgress
+                        ? <span>{downloadInfo?.[1]}%</span>
+                        :'Save to node'}
+        </button>}
     </div>
   );
 }
