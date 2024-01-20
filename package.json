@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@uqbar/client-encryptor-api": "^0.2.4",
+    "zustand": "^4.4.7"
+  }
+}
