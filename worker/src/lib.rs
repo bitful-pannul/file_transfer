@@ -153,7 +153,6 @@ fn handle_message(
                             .send()?;
 
                         if progress >= 100 {
-                            Response::new().body(serde_json::to_vec(&"Done")?).send()?;
                             return Ok(true);
                         }
                     }

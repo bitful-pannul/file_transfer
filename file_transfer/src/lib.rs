@@ -1,12 +1,13 @@
 use kinode::process::standard::get_blob;
 use kinode_process_lib::{
+    await_message,
     http::{
-        bind_http_path, bind_http_static_path, bind_ws_path, send_response, send_ws_push, serve_ui,
-        HttpServerRequest, IncomingHttpRequest, StatusCode, WsMessageType,
+        bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
+        StatusCode, WsMessageType,
     },
-    await_message, our_capabilities, print_to_terminal, println, spawn,
-    vfs::{create_drive, create_file, metadata, open_dir, Directory, FileType},
-    Address, LazyLoadBlob, Message, OnExit, PackageId, ProcessId, Request, Response,
+    our_capabilities, println, spawn,
+    vfs::{create_drive, metadata, open_dir, Directory, FileType},
+    Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -94,8 +95,6 @@ fn handle_transfer_request(
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
-    let as_string = String::from_utf8(body.clone())?;
-    println!("file_transfer: got request: {}", as_string);
     let transfer_request = serde_json::from_slice::<TransferRequest>(body)?;
 
     match transfer_request {
