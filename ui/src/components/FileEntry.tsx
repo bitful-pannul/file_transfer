@@ -5,9 +5,10 @@ import useFileTransferStore from "../store/fileTransferStore";
 interface Props {
     file: KinoFile
     showDownload?: boolean
+    node: string
 }
-function FileEntry({ file, showDownload }: Props) {
-    const { files: ourFiles } = useFileTransferStore();
+function FileEntry({ file, showDownload, node }: Props) {
+    const { files: ourFiles, filesInProgress, api } = useFileTransferStore();
     const [actualFilename, setActualFilename] = useState<string>('')
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isOurFile, setIsOurFile] = useState<boolean>(false)
@@ -18,7 +19,9 @@ function FileEntry({ file, showDownload }: Props) {
     }, [file.name])
 
     useEffect(() => {
-        const fileSize = file.size > 1000000000
+        const fileSize = file.size > 1000000000000
+            ? `${(file.size / 1000000000000).toFixed(2)} TB`
+            : file.size > 1000000000
             ? `${(file.size / 1000000000).toFixed(2)} GB`
             : file.size > 1000000
             ? `${(file.size / 1000000).toFixed(2)} MB`
@@ -28,16 +31,18 @@ function FileEntry({ file, showDownload }: Props) {
 
     const onDownload = () => {
         if (!file.name) return alert('No file name');
-        
-        fetch(`/files/${actualFilename}`)
-            .then((response) => response.blob())
-            .then((blob) => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = actualFilename;
-                a.click();
-            });
+        if (!api) return alert('No api');
+        api.send({
+            data: {
+                Download: {
+                    name: file.name,
+                    target: {
+                        node,
+                        process: window.our.process,
+                    }
+                }
+            }
+        })
     }
 
     useEffect(() => {
@@ -48,11 +53,15 @@ function FileEntry({ file, showDownload }: Props) {
         }
     }, [ourFiles])
 
+    const downloadInfo = Object.entries(filesInProgress).find(([key, _]) => key.match(file.name));
+    const downloadInProgress = (downloadInfo?.[1] || 100) < 100;
     const downloadButton = isOurFile 
         ? <button disabled
                 className='bg-gray-800 font-bold py-2 px-4 rounded ml-2'
             >
-                Saved
+                {downloadInProgress 
+                    ? <span>{downloadInfo?.[1]}%</span>
+                    : 'Saved'}
             </button>
         : <button
         className='bg-green-800 hover:bg-blue-700 font-bold py-2 px-4 rounded ml-2'

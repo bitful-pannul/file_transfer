@@ -14,7 +14,7 @@ let inited = false
 
 function App() {
   const [filesToUpload, setFilesToUpload] = useState<File[]>([])
-  const { files, setFiles, handleWsMessage } = useFileTransferStore();
+  const { files, setFiles, handleWsMessage, setApi } = useFileTransferStore();
 
   const BASE_URL = import.meta.env.BASE_URL;
   const PROXY_TARGET = `${(import.meta.env.VITE_NODE_URL || "http://localhost:8080")}${BASE_URL}`;
@@ -28,12 +28,14 @@ function App() {
     if (!inited) {
       inited = true
 
-      new UqbarEncryptorApi({
+      const api = new UqbarEncryptorApi({
         uri: WEBSOCKET_URL,
         nodeId: window.our.node,
         processId: window.our.process,
         onMessage: handleWsMessage
       });
+
+      setApi(api);
     }
   }, []) 
 
@@ -98,7 +100,7 @@ function App() {
               </div>
             )}
           </div>
-          <MyFiles files={files} />
+          <MyFiles node={window.our.node} files={files} />
         </div>
       </div>
       <div className='flex flex-col w-3/4 bg-gray-900 h-screen content px-2 py-1'>

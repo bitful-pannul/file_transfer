@@ -1,3 +1,4 @@
+use kinode::process::standard::get_blob;
 use kinode_process_lib::{
     http::{
         bind_http_path, bind_http_static_path, bind_ws_path, send_response, send_ws_push, serve_ui,
@@ -93,6 +94,8 @@ fn handle_transfer_request(
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
+    let as_string = String::from_utf8(body.clone())?;
+    println!("file_transfer: got request: {}", as_string);
     let transfer_request = serde_json::from_slice::<TransferRequest>(body)?;
 
     match transfer_request {
@@ -157,7 +160,8 @@ fn handle_transfer_request(
             let ws_blob = LazyLoadBlob {
                 mime: Some("application/json".to_string()),
                 bytes: serde_json::json!({
-                    "Progress": {
+                    "kind": "progress",
+                    "data": {
                         "name": name,
                         "progress": progress,
                     }
@@ -232,7 +236,13 @@ fn handle_http_request(
             channel_id,
             message_type,
         } => {
-            // handle_transfer_request(our, source, &body, files_dir, our_channel_id)?;
+            if message_type != WsMessageType::Binary {
+                return Ok(());
+            }
+            let Some(blob) = get_blob() else {
+                return Ok(());
+            };
+            handle_transfer_request(our, source, &blob.bytes, files_dir, our_channel_id)?
         }
     }
     Ok(())
