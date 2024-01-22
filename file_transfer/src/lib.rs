@@ -1,16 +1,9 @@
-use kinode::process::standard::get_blob;
 use kinode_process_lib::{
-    await_message,
-    http::{
-        bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
-        StatusCode, WsMessageType,
-    },
-    our_capabilities, println, spawn,
+    await_message, our_capabilities, println, spawn,
     vfs::{create_drive, metadata, open_dir, Directory, FileType},
-    Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response,
+    Address, Message, OnExit, ProcessId, Request, Response,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::str::FromStr;
 
 wit_bindgen::generate!({
@@ -34,8 +27,6 @@ pub enum TransferResponse {
     Download { name: String, worker: Address },
     Done,
     Started,
-    Ok,  // WS response
-    Err, // WS response
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -71,29 +62,11 @@ fn ls_files(files_dir: &Directory) -> anyhow::Result<Vec<FileInfo>> {
     Ok(files)
 }
 
-// fn parse_files_from_form(data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-//     let boundary = Multipart::boundary_from_content_type("multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW")
-//         .ok_or("Failed to get boundary")?;
-
-//     let mut multipart = Multipart::with_body(data, boundary);
-
-//     while let Some(mut field) = multipart.read_entry()? {
-//         if let Some(filename) = field.headers.filename.clone() {
-//             let mut buffer = Vec::new();
-//             field.data.read_to_end(&mut buffer)?;
-//             println!(format!("Received file {} with size {}", filename, buffer.len()).as_str());
-//         }
-//     }
-
-//     Ok(())
-// }
-
 fn handle_transfer_request(
     our: &Address,
     source: &Address,
     body: &Vec<u8>,
     files_dir: &Directory,
-    channel_id: &mut u32,
 ) -> anyhow::Result<()> {
     let transfer_request = serde_json::from_slice::<TransferRequest>(body)?;
 
@@ -154,96 +127,10 @@ fn handle_transfer_request(
             }
         }
         TransferRequest::Progress { name, progress } => {
-            // print out in terminal and pipe to UI via websocket
             println!("file: {} progress: {}%", name, progress);
-            let ws_blob = LazyLoadBlob {
-                mime: Some("application/json".to_string()),
-                bytes: serde_json::json!({
-                    "kind": "progress",
-                    "data": {
-                        "name": name,
-                        "progress": progress,
-                    }
-                })
-                .to_string()
-                .as_bytes()
-                .to_vec(),
-            };
-            send_ws_push(
-                our.node.clone(),
-                channel_id.clone(),
-                WsMessageType::Text,
-                ws_blob,
-            )?;
         }
     }
 
-    Ok(())
-}
-
-fn handle_http_request(
-    our: &Address,
-    source: &Address,
-    body: &Vec<u8>,
-    files_dir: &Directory,
-    our_channel_id: &mut u32,
-) -> anyhow::Result<()> {
-    let http_request = serde_json::from_slice::<HttpServerRequest>(body)?;
-
-    match http_request {
-        HttpServerRequest::Http(request) => {
-            match request.method()?.as_str() {
-                "GET" => {
-                    // /?node=akira.os
-                    if let Some(remote_node) = request.query_params().get("node") {
-                        let remote_node = Address {
-                            node: remote_node.clone(),
-                            process: our.process.clone(),
-                        };
-
-                        let resp = Request::new()
-                            .body(serde_json::to_vec(&TransferRequest::ListFiles)?)
-                            .target(&remote_node)
-                            .send_and_await_response(5)??;
-
-                        handle_transfer_response(source, &resp.body().to_vec(), true)?;
-                    }
-
-                    let files = ls_files(files_dir)?;
-                    let mut headers = HashMap::new();
-                    headers.insert("Content-Type".to_string(), "application/json".to_string());
-
-                    let body = serde_json::to_vec(&TransferResponse::ListFiles(files))?;
-
-                    send_response(StatusCode::OK, Some(headers), body)?;
-                }
-                "POST" => {
-                    // upload a file
-                    if source.node != our.node {
-                        println!("file_transfer: error: cannot upload file from another node");
-                        return Ok(());
-                    }
-                }
-                _ => {}
-            }
-        }
-        HttpServerRequest::WebSocketClose(_) => {}
-        HttpServerRequest::WebSocketOpen { path, channel_id } => {
-            *our_channel_id = channel_id;
-        }
-        HttpServerRequest::WebSocketPush {
-            channel_id,
-            message_type,
-        } => {
-            if message_type != WsMessageType::Binary {
-                return Ok(());
-            }
-            let Some(blob) = get_blob() else {
-                return Ok(());
-            };
-            handle_transfer_request(our, source, &blob.bytes, files_dir, our_channel_id)?
-        }
-    }
     Ok(())
 }
 
@@ -253,15 +140,6 @@ fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> 
     match transfer_response {
         TransferResponse::ListFiles(files) => {
             println!("got files from node: {:?} ,files: {:?}", source, files);
-
-            if is_http {
-                let mut headers = HashMap::new();
-                headers.insert("Content-Type".to_string(), "application/json".to_string());
-
-                let body = serde_json::to_vec(&TransferResponse::ListFiles(files))?;
-
-                send_response(StatusCode::OK, Some(headers), body)?;
-            }
         }
         _ => {}
     }
@@ -269,14 +147,8 @@ fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> 
     Ok(())
 }
 
-fn handle_message(
-    our: &Address,
-    files_dir: &Directory,
-    channel_id: &mut u32,
-) -> anyhow::Result<()> {
+fn handle_message(our: &Address, files_dir: &Directory) -> anyhow::Result<()> {
     let message = await_message()?;
-
-    let http_server_address = ProcessId::from_str("http_server:distro:sys").unwrap();
 
     match message {
         Message::Response {
@@ -288,25 +160,9 @@ fn handle_message(
             ref source,
             ref body,
             ..
-        } => {
-            if source.process == http_server_address {
-                handle_http_request(&our, source, body, files_dir, channel_id)?;
-                return Ok(());
-            }
-            handle_transfer_request(&our, source, body, files_dir, channel_id)
-        }
+        } => handle_transfer_request(&our, source, body, files_dir),
     }
 }
-
-/// step 1. bind http path / central UI
-/// UI makes /GET request to get list of files
-/// optional get list of files from another node
-///     app_url/node_id   
-///     ...
-/// List<Download>
-///    GET /download?name=foo&target=app_url
-/// Progress %, pipe request through to frontend
-/// POST upload file ()
 
 struct Component;
 impl Guest for Component {
@@ -318,14 +174,8 @@ impl Guest for Component {
         let drive_path = create_drive(our.package_id(), "files").unwrap();
         let files_dir = open_dir(&drive_path, false).unwrap();
 
-        serve_ui(&our, &"ui").unwrap();
-        bind_http_path("/files", false, true).unwrap();
-        bind_ws_path("/", false, false).unwrap();
-
-        let mut channel_id: u32 = 69;
-
         loop {
-            match handle_message(&our, &files_dir, &mut channel_id) {
+            match handle_message(&our, &files_dir) {
                 Ok(()) => {}
                 Err(e) => {
                     println!("file_transfer: error: {:?}", e);
