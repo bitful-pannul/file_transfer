@@ -5,14 +5,14 @@ import classNames from "classnames";
 
 interface Props {
     file: KinoFile
-    showDownload?: boolean
     node: string
 }
-function FileEntry({ file, showDownload, node }: Props) {
+function FileEntry({ file, node }: Props) {
     const { files: ourFiles, filesInProgress, api } = useFileTransferStore();
     const [actualFilename, setActualFilename] = useState<string>('')
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isOurFile, setIsOurFile] = useState<boolean>(false)
+    const showDownload = node !== window.our.node;
 
     useEffect(() => {
         const filename = file.name.split('/files/').pop() || '';
