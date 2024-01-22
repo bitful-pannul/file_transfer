@@ -5,7 +5,7 @@ use kinode_process_lib::{
         bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
         StatusCode, WsMessageType,
     },
-    our_capabilities, println, spawn,
+    our_capabilities, print_to_terminal, println, spawn,
     vfs::{create_drive, metadata, open_dir, Directory, FileType},
     Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response,
 };
@@ -71,23 +71,6 @@ fn ls_files(files_dir: &Directory) -> anyhow::Result<Vec<FileInfo>> {
     Ok(files)
 }
 
-// fn parse_files_from_form(data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-//     let boundary = Multipart::boundary_from_content_type("multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW")
-//         .ok_or("Failed to get boundary")?;
-
-//     let mut multipart = Multipart::with_body(data, boundary);
-
-//     while let Some(mut field) = multipart.read_entry()? {
-//         if let Some(filename) = field.headers.filename.clone() {
-//             let mut buffer = Vec::new();
-//             field.data.read_to_end(&mut buffer)?;
-//             println!(format!("Received file {} with size {}", filename, buffer.len()).as_str());
-//         }
-//     }
-
-//     Ok(())
-// }
-
 fn handle_transfer_request(
     our: &Address,
     source: &Address,
@@ -95,7 +78,11 @@ fn handle_transfer_request(
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
-    let transfer_request = serde_json::from_slice::<TransferRequest>(body)?;
+    let Ok(transfer_request) = serde_json::from_slice::<TransferRequest>(body) else {
+        // surfacing these quietly for now.
+        print_to_terminal(2, "file_transfer: error: failed to parse transfer request");
+        return Ok(());
+    };
 
     match transfer_request {
         TransferRequest::ListFiles => {
@@ -228,13 +215,10 @@ fn handle_http_request(
             }
         }
         HttpServerRequest::WebSocketClose(_) => {}
-        HttpServerRequest::WebSocketOpen { path, channel_id } => {
+        HttpServerRequest::WebSocketOpen { channel_id, .. } => {
             *our_channel_id = channel_id;
         }
-        HttpServerRequest::WebSocketPush {
-            channel_id,
-            message_type,
-        } => {
+        HttpServerRequest::WebSocketPush { message_type, .. } => {
             if message_type != WsMessageType::Binary {
                 return Ok(());
             }
@@ -248,7 +232,11 @@ fn handle_http_request(
 }
 
 fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
-    let transfer_response = serde_json::from_slice::<TransferResponse>(body)?;
+    let Ok(transfer_response) = serde_json::from_slice::<TransferResponse>(body) else {
+        // surfacing these quietly for now.
+        print_to_terminal(2, "file_transfer: error: failed to parse transfer response");
+        return Ok(());
+    };
 
     match transfer_response {
         TransferResponse::ListFiles(files) => {

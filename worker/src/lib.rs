@@ -45,11 +45,7 @@ fn handle_message(
     let message = await_message()?;
 
     match message {
-        Message::Request {
-            ref source,
-            ref body,
-            ..
-        } => {
+        Message::Request { ref body, .. } => {
             let request = serde_json::from_slice::<WorkerRequest>(body)?;
 
             match request {
