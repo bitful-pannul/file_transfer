@@ -2,10 +2,7 @@ import { useState } from 'react';
 import KinoFile from '../types/KinoFile';
 import FileEntry from './FileEntry';
 
-interface Props {
-    baseUrl: string;
-}
-const SearchFiles = function({ baseUrl }: Props) {
+const SearchFiles = function() {
     const [searchTerm, setSearchTerm] = useState('');
     const [foundFiles, setFoundFiles] = useState<KinoFile[]>([]);
 
@@ -13,7 +10,7 @@ const SearchFiles = function({ baseUrl }: Props) {
         if (!searchTerm) return alert('Please enter a node name.');
         if (!searchTerm.match(/^[a-zA-Z0-9-]+\.os$/)) return alert('Invalid node name.');
         try {
-            fetch(`${baseUrl}/files?node=${searchTerm}`, {
+            fetch(`${import.meta.env.BASE_URL}/files?node=${searchTerm}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

@@ -104,7 +104,7 @@ function App() {
         </div>
       </div>
       <div className='flex flex-col w-3/4 bg-gray-900 h-screen content px-2 py-1'>
-        <SearchFiles baseUrl={BASE_URL} />
+        <SearchFiles />
       </div>
     </div>
   )
