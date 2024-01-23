@@ -14,7 +14,7 @@ let inited = false
 
 function App() {
   const [filesToUpload, setFilesToUpload] = useState<File[]>([])
-  const { files, setFiles, handleWsMessage, setApi } = useFileTransferStore();
+  const { files, handleWsMessage, setApi, refreshFiles } = useFileTransferStore();
 
   const BASE_URL = import.meta.env.BASE_URL;
   const PROXY_TARGET = `${(import.meta.env.VITE_NODE_URL || "http://localhost:8080")}${BASE_URL}`;
@@ -49,18 +49,6 @@ function App() {
     }
   }
 
-  const refreshFiles = () => {
-    fetch(`${BASE_URL}/files`)
-      .then((response) => response.json())
-      .then((data) => {
-        try {
-          setFiles(data.ListFiles)
-        } catch {
-          console.log("Failed to parse JSON files", data);
-        }
-      })
-  }
-
   const onUploadFiles = () => {
     const formData = new FormData()
     filesToUpload.forEach((file) => {
@@ -73,6 +61,10 @@ function App() {
     })
       .then(() => {
         refreshFiles()
+        setFilesToUpload([])
+      })
+      .catch((err) => {
+        alert(err)
       })
   }
 

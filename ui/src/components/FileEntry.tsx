@@ -51,11 +51,9 @@ function FileEntry({ file, node }: Props) {
         }
     }, [ourFiles])
 
-    console.log({ ourFiles, filesInProgress })
     const downloadInfo = Object.entries(filesInProgress).find(([key, _]) => file.name.match(key));
     const downloadInProgress = (downloadInfo?.[1] || 100) < 100;
     const downloadComplete = (downloadInfo?.[1] || 0) === 100;
-    console.log ({ downloadInProgress, downloadInfo})
 
     return (
     <div className='flex flex-row px-2 py-1 justify-between place-items-center'>

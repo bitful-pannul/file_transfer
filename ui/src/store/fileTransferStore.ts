@@ -12,10 +12,12 @@ export interface FileTransferStore {
   setFilesInProgress: (filesInProgress: { [key: string]: number }) => void
   api: UqbarEncryptorApi | null
   setApi: (api: UqbarEncryptorApi) => void
+  refreshFiles: () => void
 }
 
-interface ProgressMessage { name: string, progress: number }
-type WsMessage = { kind: string, data: ProgressMessage }
+type WsMessage =
+  | { kind: 'progress', data: { name: string, progress: number } }
+  | { kind: 'uploaded', data: { name: string, size: number } }
 
 const useFileTransferStore = create<FileTransferStore>()(
   persist(
@@ -37,34 +39,33 @@ const useFileTransferStore = create<FileTransferStore>()(
               const fip = { ...filesInProgress, [name]: progress }
               console.log({ fip })
               setFilesInProgress(fip)
+            } else if (kind === 'uploaded') {
+              get().refreshFiles()
             }
           } catch (error) {
             console.error("Error parsing WebSocket message", error);
           }
         } else {
             console.log('WS: GOT BLOB', json)
-        //   const reader = new FileReader();
-
-        //   reader.onload = function(event) {
-        //     if (typeof event?.target?.result === 'string') {
-        //       try {
-        //         const { kind, data } = JSON.parse(event.target.result) as WsMessage;
-
-        //         if (kind === 'game_update') {
-        //           set({ games: { ...get().games, [data.id]: data } })
-        //         }
-        //       } catch (error) {
-        //         console.error("Error parsing WebSocket message", error);
-        //       }
-        //     }
-        //   };
-
-        //   reader.readAsText(json);
         }
+      },
+      refreshFiles: () => {
+        const { setFiles } = get()
+        fetch(`${import.meta.env.BASE_URL}/files`)
+          .then((response) => response.json())
+          .then((data) => {
+            try {
+              setFiles(data.ListFiles)
+            } catch {
+              console.log("Failed to parse JSON files", data);
+            }
+          })
       },
       set,
       get,
     }),
+
+
     {
       name: 'file_transfer', // unique name
       storage: createJSONStorage(() => sessionStorage), // (optional) by default, 'localStorage' is used

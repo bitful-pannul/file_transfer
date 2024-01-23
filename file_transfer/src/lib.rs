@@ -260,6 +260,10 @@ fn handle_http_request(
                             )?;
                         }
                     }
+
+                    let mut headers = HashMap::new();
+                    headers.insert("Content-Type".to_string(), "application/json".to_string());
+                    send_response(StatusCode::OK, Some(headers), vec![])?;
                 }
                 _ => {}
             }
