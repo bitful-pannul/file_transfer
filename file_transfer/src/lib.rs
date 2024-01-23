@@ -237,6 +237,27 @@ fn handle_http_request(
                             let file_path = format!("{}/{}", files_dir.path, filename);
                             let file = create_file(&file_path)?;
                             file.write(&buffer)?;
+
+                            let ws_blob = LazyLoadBlob {
+                                mime: Some("application/json".to_string()),
+                                bytes: serde_json::json!({
+                                    "kind": "uploaded",
+                                    "data": {
+                                        "name": filename,
+                                        "size": buffer.len(),
+                                    }
+                                })
+                                .to_string()
+                                .as_bytes()
+                                .to_vec(),
+                            };
+
+                            send_ws_push(
+                                our.node.clone(),
+                                our_channel_id.clone(),
+                                WsMessageType::Text,
+                                ws_blob,
+                            )?;
                         }
                     }
                 }
