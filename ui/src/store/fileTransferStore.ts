@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import KinoFile from '../types/KinoFile'
-import UqbarEncryptorApi from '@uqbar/client-encryptor-api'
+import KinodeApi from '@kinode/client-api'
 
 export interface FileTransferStore {
   handleWsMessage: (message: string) => void
@@ -10,8 +10,8 @@ export interface FileTransferStore {
   set: (partial: FileTransferStore | Partial<FileTransferStore>) => void
   filesInProgress: { [key: string]: number }
   setFilesInProgress: (filesInProgress: { [key: string]: number }) => void
-  api: UqbarEncryptorApi | null
-  setApi: (api: UqbarEncryptorApi) => void
+  api: KinodeApi | null
+  setApi: (api: KinodeApi) => void
   refreshFiles: () => void
 }
 

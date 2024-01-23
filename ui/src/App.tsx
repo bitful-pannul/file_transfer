@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import MyFiles from './components/MyFiles'
-import UqbarEncryptorApi from '@uqbar/client-encryptor-api'
+import KinodeEncryptorApi from '@kinode/client-api'
 import useFileTransferStore from './store/fileTransferStore';
 import SearchFiles from './components/SearchFiles';
 
@@ -28,7 +28,7 @@ function App() {
     if (!inited) {
       inited = true
 
-      const api = new UqbarEncryptorApi({
+      const api = new KinodeEncryptorApi({
         uri: WEBSOCKET_URL,
         nodeId: window.our.node,
         processId: window.our.process,
