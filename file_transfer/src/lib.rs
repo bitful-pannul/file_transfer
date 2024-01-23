@@ -6,11 +6,12 @@ use kinode_process_lib::{
         StatusCode, WsMessageType,
     },
     our_capabilities, print_to_terminal, println, spawn,
-    vfs::{create_drive, metadata, open_dir, Directory, FileType},
+    vfs::{create_drive, create_file, metadata, open_dir, Directory, FileType},
     Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::{Cursor, Read};
 use std::str::FromStr;
 
 wit_bindgen::generate!({
@@ -34,8 +35,6 @@ pub enum TransferResponse {
     Download { name: String, worker: Address },
     Done,
     Started,
-    Ok,  // WS response
-    Err, // WS response
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -205,10 +204,40 @@ fn handle_http_request(
                     send_response(StatusCode::OK, Some(headers), body)?;
                 }
                 "POST" => {
-                    // upload a file
-                    if source.node != our.node {
-                        println!("file_transfer: error: cannot upload file from another node");
-                        return Ok(());
+                    // upload files from UI
+                    let headers = request.headers();
+                    let content_type = headers
+                        .get("Content-Type")
+                        .ok_or_else(|| anyhow::anyhow!("upload, Content-Type header not found"))?
+                        .to_str()
+                        .map_err(|_| anyhow::anyhow!("failed to convert Content-Type to string"))?;
+
+                    let body = get_blob()
+                        .ok_or_else(|| anyhow::anyhow!("failed to get blob"))?
+                        .bytes;
+
+                    let boundary_parts: Vec<&str> = content_type.split("boundary=").collect();
+                    let boundary = match boundary_parts.get(1) {
+                        Some(boundary) => boundary,
+                        None => {
+                            return Err(anyhow::anyhow!(
+                                "upload fail, no boundary found in POST content type"
+                            ));
+                        }
+                    };
+
+                    let data = Cursor::new(body.clone());
+
+                    let mut multipart = multipart::server::Multipart::with_body(data, *boundary);
+                    while let Some(mut field) = multipart.read_entry()? {
+                        if let Some(filename) = field.headers.filename.clone() {
+                            let mut buffer = Vec::new();
+                            field.data.read_to_end(&mut buffer)?;
+                            println!("uploaded file {} with size {}", filename, buffer.len());
+                            let file_path = format!("{}/{}", files_dir.path, filename);
+                            let file = create_file(&file_path)?;
+                            file.write(&buffer)?;
+                        }
                     }
                 }
                 _ => {}
