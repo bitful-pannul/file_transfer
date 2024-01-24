@@ -41,7 +41,7 @@ function App() {
 
   useEffect(() => {
     refreshFiles()
-  }, [])
+  }, [files])
 
   const onAddFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -95,7 +95,7 @@ function App() {
           <MyFiles node={window.our.node} files={files} />
         </div>
       </div>
-      <div className='flex flex-col w-3/4 bg-gray-900 h-screen content px-2 py-1'>
+      <div className='flex flex-col w-3/4 bg-gray-900 h-screen content px-2 py-1 overflow-y-auto'>
         <SearchFiles />
       </div>
     </div>

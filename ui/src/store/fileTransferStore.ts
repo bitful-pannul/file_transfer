@@ -39,6 +39,9 @@ const useFileTransferStore = create<FileTransferStore>()(
               const fip = { ...filesInProgress, [name]: progress }
               console.log({ fip })
               setFilesInProgress(fip)
+              if (progress >= 100) {
+                get().refreshFiles()
+              }
             } else if (kind === 'uploaded') {
               get().refreshFiles()
             }
