@@ -41,7 +41,7 @@ function App() {
 
   useEffect(() => {
     refreshFiles()
-  }, [files])
+  }, [])
 
   const onAddFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {

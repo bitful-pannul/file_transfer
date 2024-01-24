@@ -54,6 +54,7 @@ const useFileTransferStore = create<FileTransferStore>()(
       },
       refreshFiles: () => {
         const { setFiles } = get()
+        console.log('refreshing files')
         fetch(`${import.meta.env.BASE_URL}/files`)
           .then((response) => response.json())
           .then((data) => {

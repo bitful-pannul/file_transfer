@@ -12,6 +12,7 @@ function FileEntry({ file, node }: Props) {
     const [actualFilename, setActualFilename] = useState<string>('')
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isOurFile, setIsOurFile] = useState<boolean>(false)
+    const [downloading, setDownloading] = useState<boolean>(false)
     const showDownload = node !== window.our.node;
 
     useEffect(() => {
@@ -33,6 +34,7 @@ function FileEntry({ file, node }: Props) {
     const onDownload = () => {
         if (!file.name) return alert('No file name');
         if (!api) return alert('No api');
+        setDownloading(true);
         api.send({
             data: {
                 Download: {
@@ -52,7 +54,7 @@ function FileEntry({ file, node }: Props) {
     }, [ourFiles])
 
     const downloadInfo = Object.entries(filesInProgress).find(([key, _]) => file.name.match(key));
-    const downloadInProgress = (downloadInfo?.[1] || 100) < 100;
+    const downloadInProgress = downloading || (downloadInfo?.[1] || 100) < 100;
     const downloadComplete = (downloadInfo?.[1] || 0) === 100;
 
     return (
@@ -72,8 +74,8 @@ function FileEntry({ file, node }: Props) {
                 : downloadComplete 
                     ? 'Saved'
                     : downloadInProgress
-                        ? <span>{downloadInfo?.[1]}%</span>
-                        :'Save to node'}
+                        ? <span>{downloadInfo?.[1] || 0}%</span>
+                        : 'Save to node'}
         </button>}
     </div>
   );
