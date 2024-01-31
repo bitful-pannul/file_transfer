@@ -572,10 +572,6 @@ video {
   display: none;
 }
 
-.h-full {
-  height: 100%;
-}
-
 .h-screen {
   height: 100vh;
 }
@@ -620,10 +616,6 @@ video {
 
 .justify-between {
   justify-content: space-between;
-}
-
-.self-stretch {
-  align-self: stretch;
 }
 
 .overflow-y-auto {

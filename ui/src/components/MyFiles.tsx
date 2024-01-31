@@ -13,7 +13,7 @@ const MyFiles = ({ files, node }: Props) => {
             <h3 className='font-bold text-white px-2 py-1 font-mono'>{node}</h3>
             <div className='text-xs flex flex-col'>
             {files.length === 0
-                ? <span className='text-white'>No files... yet.</span>
+                ? <span className='text-white px-2 py-1'>No files... yet.</span>
                 : files.map((file, index) => <FileEntry node={node} key={index} file={file} />)}
             </div>
         </div>

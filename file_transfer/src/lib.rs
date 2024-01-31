@@ -6,7 +6,10 @@ use kinode_process_lib::{
         StatusCode, WsMessageType,
     },
     our_capabilities, print_to_terminal, println, spawn,
-    vfs::{create_drive, create_file, metadata, open_dir, Directory, FileType},
+    vfs::{
+        create_drive, create_file, metadata, open_dir, open_file,
+        Directory, FileType
+    },
     Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response,
 };
 use serde::{Deserialize, Serialize};
@@ -173,6 +176,7 @@ fn handle_http_request(
     body: &Vec<u8>,
     files_dir: &Directory,
     our_channel_id: &mut u32,
+    user_config: &mut UserConfig,
 ) -> anyhow::Result<()> {
     let http_request = serde_json::from_slice::<HttpServerRequest>(body)?;
 
@@ -186,6 +190,8 @@ fn handle_http_request(
                             node: remote_node.clone(),
                             process: our.process.clone(),
                         };
+
+                        user_config.known_nodes.push(remote_node.clone());
 
                         let resp = Request::new()
                             .body(serde_json::to_vec(&TransferRequest::ListFiles)?)
@@ -315,6 +321,7 @@ fn handle_message(
     our: &Address,
     files_dir: &Directory,
     channel_id: &mut u32,
+    user_config: &mut UserConfig,
 ) -> anyhow::Result<()> {
     let message = await_message()?;
 
@@ -332,8 +339,7 @@ fn handle_message(
             ..
         } => {
             if source.process == http_server_address {
-                handle_http_request(&our, source, body, files_dir, channel_id)?;
-                return Ok(());
+                handle_http_request(&our, source, body, files_dir, channel_id, user_config)?
             }
             handle_transfer_request(&our, source, body, files_dir, channel_id)
         }
@@ -350,14 +356,30 @@ fn handle_message(
 /// Progress %, pipe request through to frontend
 /// POST upload file ()
 
+#[derive(Serialize, Deserialize, Debug)]
+struct UserConfig {
+    pub known_nodes: Vec<Address>,
+}
+
 struct Component;
 impl Guest for Component {
     fn init(our: String) {
         println!("file_transfer: begin");
 
         let our = Address::from_str(&our).unwrap();
-
         let drive_path = create_drive(our.package_id(), "files").unwrap();
+        let config_file = format!("{}/config.json", drive_path);
+        let mut user_config = match metadata(&config_file) {
+            Ok(_) => {
+                let config = open_file(&config_file, true).unwrap();
+                let contents = config.read_to_end().unwrap();
+                
+                serde_json::from_slice(&contents).unwrap()
+            }
+            Err(_) => UserConfig {
+                known_nodes: vec![],
+            },
+        };
         let files_dir = open_dir(&drive_path, false).unwrap();
 
         serve_ui(&our, &"ui").unwrap();
@@ -367,8 +389,12 @@ impl Guest for Component {
         let mut channel_id: u32 = 69;
 
         loop {
-            match handle_message(&our, &files_dir, &mut channel_id) {
-                Ok(()) => {}
+            match handle_message(&our, &files_dir, &mut channel_id, &mut user_config) {
+                Ok(()) => {
+                    // write config
+                    let config_file_dest = create_file(&config_file).unwrap();
+                    config_file_dest.write(&serde_json::to_vec(&user_config).unwrap()).unwrap();
+                }
                 Err(e) => {
                     println!("file_transfer: error: {:?}", e);
                 }
