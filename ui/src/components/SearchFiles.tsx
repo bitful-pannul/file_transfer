@@ -72,8 +72,8 @@ const SearchFiles = function() {
                     </select>
                 </div>}
             </div>
-            {!foundFiles && <span className='text-white'>Enter a node name to search for files.</span>}
             {searching && <span className='text-white'>Searching...</span>}
+            {!searching && !foundFiles && <span className='text-white'>Enter a node name to search for files.</span>}
             {!searching && foundFiles && <h2 className='text-xl font-bold'>Search Results</h2>}
             {!searching && foundFiles && foundFiles.length === 0 && <span className='text-white'>No files found.</span>}
             {foundFiles && foundFiles.length > 0 && <div className='flex flex-col px-2 py-1'>

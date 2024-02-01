@@ -166,7 +166,7 @@ fn handle_transfer_request(
         TransferRequest::Delete { name } => {
             println!("deleting file: {}", name);
             remove_file(&name)?;
-            // TODO: push updated files list via ws
+            push_file_update_via_ws(channel_id);
         }
     }
 
@@ -293,7 +293,7 @@ fn handle_http_request(
         HttpServerRequest::WebSocketOpen { channel_id, path } => {
             *our_channel_id = channel_id;
 
-            push_state_via_ws(our, our_channel_id);
+            push_state_via_ws(our_channel_id);
         }
         HttpServerRequest::WebSocketPush { message_type, .. } => {
             if message_type != WsMessageType::Binary {
@@ -308,7 +308,7 @@ fn handle_http_request(
     Ok(())
 }
 
-fn push_state_via_ws(our: &Address, channel_id: &mut u32) {
+fn push_state_via_ws(channel_id: &mut u32) {
     send_ws_push(
         channel_id.clone(), 
         WsMessageType::Text, 
@@ -317,6 +317,23 @@ fn push_state_via_ws(our: &Address, channel_id: &mut u32) {
             bytes: serde_json::json!({
                 "kind": "state",
                 "data": serde_json::from_slice::<FileTransferState>(&get_state().unwrap()).unwrap()
+            })
+            .to_string()
+            .as_bytes()
+            .to_vec()
+        }
+    )
+}
+
+fn push_file_update_via_ws(channel_id: &mut u32) {
+    send_ws_push(
+        channel_id.clone(), 
+        WsMessageType::Text, 
+        LazyLoadBlob {
+            mime: Some("application/json".to_string()),
+            bytes: serde_json::json!({
+                "kind": "file_update",
+                "data": ""
             })
             .to_string()
             .as_bytes()

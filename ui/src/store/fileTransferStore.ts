@@ -48,6 +48,8 @@ const useFileTransferStore = create<FileTransferStore>()(
               }
             } else if (kind === 'uploaded') {
               get().refreshFiles()
+            } else if (kind === 'file_update') {
+              get().refreshFiles()
             } else if (kind === 'state') {
               const { known_nodes } = data
               setKnownNodes(known_nodes)
