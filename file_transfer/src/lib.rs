@@ -1,16 +1,13 @@
 use kinode::process::standard::get_blob;
 use kinode_process_lib::{
-    await_message,
-    http::{
+    get_state, set_state,
+    await_message, http::{
         bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
         StatusCode, WsMessageType,
-    },
-    our_capabilities, print_to_terminal, println, spawn,
-    vfs::{
+    }, our_capabilities, print_to_terminal, println, spawn, vfs::{
         create_drive, create_file, metadata, open_dir, open_file,
         Directory, FileType
-    },
-    Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response,
+    }, Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -176,7 +173,6 @@ fn handle_http_request(
     body: &Vec<u8>,
     files_dir: &Directory,
     our_channel_id: &mut u32,
-    user_config: &mut UserConfig,
 ) -> anyhow::Result<()> {
     let http_request = serde_json::from_slice::<HttpServerRequest>(body)?;
 
@@ -191,8 +187,22 @@ fn handle_http_request(
                             process: our.process.clone(),
                         };
 
-                        user_config.known_nodes.push(remote_node.clone());
-
+                        match serde_json::from_slice::<FileTransferState>(&get_state().unwrap()) {
+                            Ok(state) => {
+                                if !state.known_nodes.contains(&remote_node) {
+                                    let mut state = state;
+                                    state.known_nodes.push(remote_node.clone());
+                                    set_state(&serde_json::to_vec(&state)?);
+                                }
+                            }
+                            Err(_) => {
+                                let state = FileTransferState {
+                                    known_nodes: vec![remote_node.clone()],
+                                };
+                                set_state(&serde_json::to_vec(&state)?);
+                            }
+                        }
+                       
                         let resp = Request::new()
                             .body(serde_json::to_vec(&TransferRequest::ListFiles)?)
                             .target(&remote_node)
@@ -321,7 +331,6 @@ fn handle_message(
     our: &Address,
     files_dir: &Directory,
     channel_id: &mut u32,
-    user_config: &mut UserConfig,
 ) -> anyhow::Result<()> {
     let message = await_message()?;
 
@@ -339,7 +348,7 @@ fn handle_message(
             ..
         } => {
             if source.process == http_server_address {
-                handle_http_request(&our, source, body, files_dir, channel_id, user_config)?
+                handle_http_request(&our, source, body, files_dir, channel_id)?
             }
             handle_transfer_request(&our, source, body, files_dir, channel_id)
         }
@@ -356,8 +365,11 @@ fn handle_message(
 /// Progress %, pipe request through to frontend
 /// POST upload file ()
 
+
+// user-facing state
+// this is intended to be NON-ESSENTIAL, i.e., we WILL overwrite it on error
 #[derive(Serialize, Deserialize, Debug)]
-struct UserConfig {
+struct FileTransferState {
     pub known_nodes: Vec<Address>,
 }
 
@@ -368,18 +380,8 @@ impl Guest for Component {
 
         let our = Address::from_str(&our).unwrap();
         let drive_path = create_drive(our.package_id(), "files").unwrap();
-        let config_file = format!("{}/config.json", drive_path);
-        let mut user_config = match metadata(&config_file) {
-            Ok(_) => {
-                let config = open_file(&config_file, true).unwrap();
-                let contents = config.read_to_end().unwrap();
-                
-                serde_json::from_slice(&contents).unwrap()
-            }
-            Err(_) => UserConfig {
-                known_nodes: vec![],
-            },
-        };
+        let state = get_state().unwrap_or_else(|| serde_json::to_vec(&FileTransferState { known_nodes: vec![] }).unwrap());
+        set_state(&state);
         let files_dir = open_dir(&drive_path, false).unwrap();
 
         serve_ui(&our, &"ui").unwrap();
@@ -389,12 +391,8 @@ impl Guest for Component {
         let mut channel_id: u32 = 69;
 
         loop {
-            match handle_message(&our, &files_dir, &mut channel_id, &mut user_config) {
-                Ok(()) => {
-                    // write config
-                    let config_file_dest = create_file(&config_file).unwrap();
-                    config_file_dest.write(&serde_json::to_vec(&user_config).unwrap()).unwrap();
-                }
+            match handle_message(&our, &files_dir, &mut channel_id) {
+                Ok(()) => {}
                 Err(e) => {
                     println!("file_transfer: error: {:?}", e);
                 }
