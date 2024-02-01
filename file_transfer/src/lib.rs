@@ -5,11 +5,12 @@ use kinode_process_lib::{
         bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
         StatusCode, WsMessageType,
     }, our_capabilities, print_to_terminal, println, spawn, vfs::{
-        create_drive, create_file, metadata, open_dir, open_file,
+        create_drive, create_file, metadata, open_dir, open_file, remove_file,
         Directory, FileType
     }, Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::str::FromStr;
@@ -27,6 +28,7 @@ pub enum TransferRequest {
     ListFiles,
     Download { name: String, target: Address },
     Progress { name: String, progress: u64 },
+    Delete { name: String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -156,11 +158,15 @@ fn handle_transfer_request(
                 .to_vec(),
             };
             send_ws_push(
-                our.node.clone(),
                 channel_id.clone(),
                 WsMessageType::Text,
                 ws_blob,
-            )?;
+            );
+        }
+        TransferRequest::Delete { name } => {
+            println!("deleting file: {}", name);
+            remove_file(&name)?;
+            // TODO: push updated files list via ws
         }
     }
 
@@ -217,7 +223,7 @@ fn handle_http_request(
 
                     let body = serde_json::to_vec(&TransferResponse::ListFiles(files))?;
 
-                    send_response(StatusCode::OK, Some(headers), body)?;
+                    send_response(StatusCode::OK, Some(headers), body);
                 }
                 "POST" => {
                     // upload files from UI
@@ -269,24 +275,25 @@ fn handle_http_request(
                             };
 
                             send_ws_push(
-                                our.node.clone(),
                                 our_channel_id.clone(),
                                 WsMessageType::Text,
                                 ws_blob,
-                            )?;
+                            );
                         }
                     }
 
                     let mut headers = HashMap::new();
                     headers.insert("Content-Type".to_string(), "application/json".to_string());
-                    send_response(StatusCode::OK, Some(headers), vec![])?;
+                    send_response(StatusCode::OK, Some(headers), vec![]);
                 }
                 _ => {}
             }
         }
         HttpServerRequest::WebSocketClose(_) => {}
-        HttpServerRequest::WebSocketOpen { channel_id, .. } => {
+        HttpServerRequest::WebSocketOpen { channel_id, path } => {
             *our_channel_id = channel_id;
+
+            push_state_via_ws(our, our_channel_id);
         }
         HttpServerRequest::WebSocketPush { message_type, .. } => {
             if message_type != WsMessageType::Binary {
@@ -299,6 +306,23 @@ fn handle_http_request(
         }
     }
     Ok(())
+}
+
+fn push_state_via_ws(our: &Address, channel_id: &mut u32) {
+    send_ws_push(
+        channel_id.clone(), 
+        WsMessageType::Text, 
+        LazyLoadBlob {
+            mime: Some("application/json".to_string()),
+            bytes: serde_json::json!({
+                "kind": "state",
+                "data": serde_json::from_slice::<FileTransferState>(&get_state().unwrap()).unwrap()
+            })
+            .to_string()
+            .as_bytes()
+            .to_vec()
+        }
+    )
 }
 
 fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
@@ -318,7 +342,7 @@ fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> 
 
                 let body = serde_json::to_vec(&TransferResponse::ListFiles(files))?;
 
-                send_response(StatusCode::OK, Some(headers), body)?;
+                send_response(StatusCode::OK, Some(headers), body)
             }
         }
         _ => {}
@@ -384,7 +408,7 @@ impl Guest for Component {
         set_state(&state);
         let files_dir = open_dir(&drive_path, false).unwrap();
 
-        serve_ui(&our, &"ui").unwrap();
+        serve_ui(&our, &"ui", true, true, vec!["/"]).unwrap();
         bind_http_path("/files", false, true).unwrap();
         bind_ws_path("/", false, false).unwrap();
 

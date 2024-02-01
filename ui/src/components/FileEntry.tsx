@@ -8,7 +8,7 @@ interface Props {
     node: string
 }
 function FileEntry({ file, node }: Props) {
-    const { files: ourFiles, filesInProgress, api } = useFileTransferStore();
+    const { files: ourFiles, filesInProgress, api, refreshFiles } = useFileTransferStore();
     const [actualFilename, setActualFilename] = useState<string>('')
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isOurFile, setIsOurFile] = useState<boolean>(false)
@@ -53,6 +53,24 @@ function FileEntry({ file, node }: Props) {
         }
     }, [ourFiles])
 
+    const onDelete = () => {
+        if (!api) return alert('No api');
+        if (!actualFilename) return alert('No filename');
+        if (!window.confirm(`Are you sure you want to delete ${actualFilename}?`)) return;
+
+        api.send({
+            data: {
+                Delete: {
+                    name: file.name
+                }
+            }
+        })
+
+        setTimeout(() => {
+            refreshFiles();
+        }, 1000);
+    }
+
     const downloadInfo = Object.entries(filesInProgress).find(([key, _]) => file.name.match(key));
     const downloadInProgress = downloading || (downloadInfo?.[1] || 100) < 100;
     const downloadComplete = (downloadInfo?.[1] || 0) === 100;
@@ -76,6 +94,12 @@ function FileEntry({ file, node }: Props) {
                     : downloadInProgress
                         ? <span>{downloadInfo?.[1] || 0}%</span>
                         : 'Save to node'}
+        </button>}
+        {isOurFile && <button
+            className='bg-gray-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2'
+            onClick={onDelete}
+        >
+            &times;
         </button>}
     </div>
   );

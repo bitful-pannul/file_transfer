@@ -13,6 +13,8 @@ export interface FileTransferStore {
   api: KinodeApi | null
   setApi: (api: KinodeApi) => void
   refreshFiles: () => void
+  knownNodes: string[]
+  setKnownNodes: (knownNodes: string[]) => void
 }
 
 type WsMessage =
@@ -24,12 +26,14 @@ const useFileTransferStore = create<FileTransferStore>()(
     (set, get) => ({
       files: [],
       filesInProgress: {},
+      knownNodes: [],
+      setKnownNodes: (knownNodes) => set({ knownNodes }),
       api: null,
       setApi: (api) => set({ api }),
       setFilesInProgress: (filesInProgress) => set({ filesInProgress }),
       setFiles: (files) => set({ files }),    
       handleWsMessage: (json: string | Blob) => {
-        const { filesInProgress, setFilesInProgress } = get()
+        const { filesInProgress, setFilesInProgress, setKnownNodes } = get()
         if (typeof json === 'string') {
           try {
             console.log('WS: GOT MESSAGE', json)
@@ -44,6 +48,9 @@ const useFileTransferStore = create<FileTransferStore>()(
               }
             } else if (kind === 'uploaded') {
               get().refreshFiles()
+            } else if (kind === 'state') {
+              const { known_nodes } = data
+              setKnownNodes(known_nodes)
             }
           } catch (error) {
             console.error("Error parsing WebSocket message", error);
