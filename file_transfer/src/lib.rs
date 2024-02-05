@@ -1,16 +1,14 @@
 use kinode::process::standard::get_blob;
 use kinode_process_lib::{
-    get_state, set_state,
-    await_message, http::{
+    await_message, get_state, http::{
         bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
         StatusCode, WsMessageType,
-    }, our_capabilities, print_to_terminal, println, spawn, vfs::{
+    }, our_capabilities, print_to_terminal, println, set_state, spawn, vfs::{
         create_drive, create_file, metadata, open_dir, open_file, remove_file,
-        Directory, FileType
+        Directory, File, FileType
     }, Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::str::FromStr;
@@ -29,6 +27,7 @@ pub enum TransferRequest {
     Download { name: String, target: Address },
     Progress { name: String, progress: u64 },
     Delete { name: String },
+    CreateDir { name: String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -43,6 +42,7 @@ pub enum TransferResponse {
 pub struct FileInfo {
     pub name: String,
     pub size: u64,
+    pub dir: Option<Vec<FileInfo>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -62,9 +62,15 @@ fn ls_files(files_dir: &Directory) -> anyhow::Result<Vec<FileInfo>> {
                 Ok(metadata) => Some(FileInfo {
                     name: file.path.clone(),
                     size: metadata.len,
+                    dir: None,
                 }),
                 Err(_) => None,
             },
+            FileType::Directory => Some(FileInfo {
+                name: file.path.clone(),
+                size: 0,
+                dir: Some(ls_files(&open_dir(&file.path, false).unwrap()).unwrap()),
+            }),
             _ => None,
         })
         .collect();
@@ -164,8 +170,20 @@ fn handle_transfer_request(
             );
         }
         TransferRequest::Delete { name } => {
+            if source.node != our.node {
+                return Ok(());
+            }
             println!("deleting file: {}", name);
             remove_file(&name)?;
+            push_file_update_via_ws(channel_id);
+        }
+        TransferRequest::CreateDir { name } => {
+            if source.node != our.node {
+                return Ok(());
+            }
+            let path = format!("{}{}", files_dir.path, name);
+            println!("creating directory: {}", path);
+            open_dir(&path, true)?;
             push_file_update_via_ws(channel_id);
         }
     }

@@ -15,6 +15,7 @@ export interface FileTransferStore {
   refreshFiles: () => void
   knownNodes: string[]
   setKnownNodes: (knownNodes: string[]) => void
+  onAddFolder: (root: string, createdFolderName: string, callback: () => void) => void
 }
 
 type WsMessage =
@@ -61,6 +62,22 @@ const useFileTransferStore = create<FileTransferStore>()(
             console.log('WS: GOT BLOB', json)
         }
       },
+      onAddFolder: (root: string, createdFolderName: string, callback: () => void) => {
+        const { api } = get();
+        if (!api) return alert('No API');
+        if (!createdFolderName) return alert('No folder name');
+        if (!window.confirm(`Are you sure you want to add ${createdFolderName}?`)) return;
+
+        api.send({
+            data: {
+                CreateDir: {
+                    name: `${root}/${createdFolderName}`
+                }
+            }
+        })
+
+        callback()
+    },
       refreshFiles: () => {
         const { setFiles } = get()
         console.log('refreshing files')
