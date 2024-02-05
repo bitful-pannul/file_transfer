@@ -181,7 +181,7 @@ fn handle_transfer_request(
             if source.node != our.node {
                 return Ok(());
             }
-            let path = format!("{}{}", files_dir.path, name);
+            let path = format!("{}/{}", files_dir.path, name);
             println!("creating directory: {}", path);
             open_dir(&path, true)?;
             push_file_update_via_ws(channel_id);
