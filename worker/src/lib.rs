@@ -136,7 +136,7 @@ fn handle_message(
                         let main_app = Address {
                             node: our.node.clone(),
                             process: ProcessId::from_str(
-                                "kino_files:kino_files:template.os",
+                                "kino_files:kino_files:gloriainexcelsisdeo.os",
                             )?,
                         };
 
