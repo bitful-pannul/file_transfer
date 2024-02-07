@@ -114,7 +114,7 @@ fn handle_message(
                         Some(file) => file,
                         None => {
                             return Err(anyhow::anyhow!(
-                                "file_transfer: receive error: no file initialized"
+                                "kino_files: receive error: no file initialized"
                             ));
                         }
                     };
@@ -122,7 +122,7 @@ fn handle_message(
                     let bytes = match get_blob() {
                         Some(blob) => blob.bytes,
                         None => {
-                            return Err(anyhow::anyhow!("file_transfer: receive error: no blob"));
+                            return Err(anyhow::anyhow!("kino_files: receive error: no blob"));
                         }
                     };
 
@@ -136,7 +136,7 @@ fn handle_message(
                         let main_app = Address {
                             node: our.node.clone(),
                             process: ProcessId::from_str(
-                                "file_transfer:file_transfer:template.os",
+                                "kino_files:kino_files:template.os",
                             )?,
                         };
 
@@ -159,7 +159,7 @@ fn handle_message(
             }
         }
         _ => {
-            println!("file_transfer worker: got something else than request...");
+            println!("kino_files worker: got something else than request...");
         }
     }
     Ok(false)
@@ -168,7 +168,7 @@ fn handle_message(
 struct Component;
 impl Guest for Component {
     fn init(our: String) {
-        println!("file_transfer worker: begin");
+        println!("kino_files worker: begin");
         let start = std::time::Instant::now();
 
         let our = Address::from_str(&our).unwrap();
@@ -184,14 +184,14 @@ impl Guest for Component {
                 Ok(exit) => {
                     if exit {
                         println!(
-                            "file_transfer worker done: exiting, took {:?}",
+                            "kino_files worker done: exiting, took {:?}",
                             start.elapsed()
                         );
                         break;
                     }
                 }
                 Err(e) => {
-                    println!("file_transfer: worker error: {:?}", e);
+                    println!("kino_files: worker error: {:?}", e);
                 }
             };
         }

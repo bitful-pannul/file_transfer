@@ -87,7 +87,7 @@ fn handle_transfer_request(
 ) -> anyhow::Result<()> {
     let Ok(transfer_request) = serde_json::from_slice::<TransferRequest>(body) else {
         // surfacing these quietly for now.
-        print_to_terminal(2, "file_transfer: error: failed to parse transfer request");
+        print_to_terminal(2, "kino_files: error: failed to parse transfer request");
         return Ok(());
     };
 
@@ -363,7 +363,7 @@ fn push_file_update_via_ws(channel_id: &mut u32) {
 fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
     let Ok(transfer_response) = serde_json::from_slice::<TransferResponse>(body) else {
         // surfacing these quietly for now.
-        print_to_terminal(2, "file_transfer: error: failed to parse transfer response");
+        print_to_terminal(2, "kino_files: error: failed to parse transfer response");
         return Ok(());
     };
 
@@ -435,7 +435,7 @@ struct FileTransferState {
 struct Component;
 impl Guest for Component {
     fn init(our: String) {
-        println!("file_transfer: begin");
+        println!("kino_files: begin");
 
         let our = Address::from_str(&our).unwrap();
         let drive_path = create_drive(our.package_id(), "files").unwrap();
@@ -453,7 +453,7 @@ impl Guest for Component {
             match handle_message(&our, &files_dir, &mut channel_id) {
                 Ok(()) => {}
                 Err(e) => {
-                    println!("file_transfer: error: {:?}", e);
+                    println!("kino_files: error: {:?}", e);
                 }
             };
         }

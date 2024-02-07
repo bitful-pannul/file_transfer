@@ -1,7 +1,7 @@
 [
     {
-        "process_name": "file_transfer",
-        "process_wasm_path": "/file_transfer.wasm",
+        "process_name": "kino_files",
+        "process_wasm_path": "/kino_files.wasm",
         "on_exit": "Restart",
         "request_networking": true,
         "request_capabilities": [

@@ -97,7 +97,7 @@ const useFileTransferStore = create<FileTransferStore>()(
 
 
     {
-      name: 'file_transfer', // unique name
+      name: 'kino_files', // unique name
       storage: createJSONStorage(() => sessionStorage), // (optional) by default, 'localStorage' is used
     }
   )

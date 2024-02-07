@@ -185,19 +185,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
 
 [[package]]
-name = "file_transfer"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bincode",
- "kinode_process_lib",
- "multipart",
- "serde",
- "serde_json",
- "wit-bindgen",
-]
-
-[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -382,6 +369,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a1d36f1235bc969acba30b7f5990b864423a6068a10f7c90ae8f0112e3a59d1"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "kino_files"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "kinode_process_lib",
+ "multipart",
+ "serde",
+ "serde_json",
+ "wit-bindgen",
 ]
 
 [[package]]
