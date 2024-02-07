@@ -6,8 +6,8 @@
 
 ### List files from node
 
-```/m riodejaneiro.os@file_transfer:file_transfer:template.os "ListFiles"```
+```m riodejaneiro.os@file_transfer:file_transfer:template.os "ListFiles"```
 
 ### Download a file from node
 
-```/m our@file_transfer:file_transfer:template.os {"Download": {"name": "greco.mp4", "target": "riodejaneiro.os@file_transfer:file_transfer:template.os"}}```
+```m our@file_transfer:file_transfer:template.os {"Download": {"name": "greco.mp4", "target": "riodejaneiro.os@file_transfer:file_transfer:template.os"}}```
