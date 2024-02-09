@@ -1,0 +1,12 @@
+{
+  "name": "Kino Files",
+  "subtitle": "Share files with other nodes",
+  "version": "0.1.0",
+  "website": "https://github.com/bitful-pannul/file_transfer",
+  "mirrors": [
+      "mothu-et-doria.os"
+  ],
+  "versions": [
+      "73f97cc35f8c02fdc62c18f58644a64a3aec366f0691fa850a1845cf7a11ec38"
+  ]
+}
