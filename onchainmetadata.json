@@ -1,6 +1,6 @@
 {
-  "name": "Kino Files",
-  "subtitle": "Share files with other nodes",
+  "name": "kino_files",
+  "subtitle": "Kino Files",
   "version": "0.1.0",
   "website": "https://github.com/bitful-pannul/file_transfer",
   "mirrors": [
