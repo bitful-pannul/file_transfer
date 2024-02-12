@@ -443,10 +443,9 @@ impl Guest for Component {
         set_state(&state);
         let files_dir = open_dir(&drive_path, false).unwrap();
 
-        //TODO auth?
         serve_ui(&our, &"ui", true, false, vec!["/"]).unwrap();
         bind_http_path("/files", false, false).unwrap();
-        bind_ws_path("/", false, false).unwrap();
+        bind_ws_path("/", true, false).unwrap();
 
         let mut channel_id: u32 = 69;
 
