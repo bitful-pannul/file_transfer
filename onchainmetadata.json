@@ -2,6 +2,7 @@
   "name": "Kino Files",
   "properties": {
     "package_name": "kino_files",
+    "publisher": "odinsbadeye.os",
     "current_version": "0.1.0",
     "mirrors": [
       "mothu-et-doria.os",
