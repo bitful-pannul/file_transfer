@@ -1,9 +1,14 @@
 
-import FileEntry from './FileEntry';
 import KinoFile from '../types/KinoFile';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useFileTransferStore from '../store/fileTransferStore';
 import { CgClose, CgFolderAdd, CgMathPlus } from 'react-icons/cg';
+import '@nosferatu500/react-sortable-tree/style.css';
+import SortableTree, { TreeItem } from '@nosferatu500/react-sortable-tree';
+import FileExplorerTheme from '@nosferatu500/theme-file-explorer';
+import FileEntry from './FileEntry';
+import { TreeFile } from '../types/TreeFile';
+import { getRootPath } from '../utils/file';
 
 interface Props {
   files: KinoFile[];
@@ -11,9 +16,11 @@ interface Props {
 }
 
 const MyFiles = ({ files, node }: Props) => {    
-    const { onAddFolder, refreshFiles } = useFileTransferStore();
+    const { onAddFolder, onMoveFile, refreshFiles } = useFileTransferStore();
     const [createdFolderName, setCreatedFolderName] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
+    const [treeData, setTreeData] = useState<TreeItem[]>([])
+
     const onFolderAdded = () => {
         onAddFolder('', createdFolderName, () => {
             setIsCreatingFolder(false);
@@ -23,9 +30,42 @@ const MyFiles = ({ files, node }: Props) => {
             }, 1000);
         })
     };
+
+    const treeifyFile: (f: KinoFile) => TreeItem = (file: KinoFile) => {
+        return {
+            title: <FileEntry file={file} node={our.node} isOurFile={true} />,
+            children: file.dir ? file.dir.map((f: KinoFile) => treeifyFile(f)) : undefined,
+            file,
+        } as TreeItem;
+    }
+
+    const onFileMoved = ({ node, nextParentNode }: { node: TreeFile, nextParentNode: TreeFile, prevPath: number[], nextPath: number[] }) => {
+        console.log('moving file', node, nextParentNode)
+        setTimeout(() => {
+            refreshFiles();
+        }, 1000);
+        if (node.file.dir) return alert('Cannot move a directory');
+        if (!nextParentNode) {
+            nextParentNode = { 
+                file: { 
+                    name: getRootPath(node.file.name), 
+                    dir: [], 
+                    size: 0 
+                } 
+            };
+        } else if (!nextParentNode.file.dir) return alert('Destination must be a directory');
+        
+        onMoveFile(node as TreeFile, nextParentNode as TreeFile);
+    }
+
+    useEffect(() => {
+        const td = files.map((file: KinoFile) => treeifyFile(file)).sort((a, b) => a.file.name.localeCompare(b.file.name));
+        console.log({ td })
+        setTreeData(td);
+    }, [files]);
     
     return (
-        <div className='flex flex-col'>
+        <div className='flex flex-col grow self-stretch'>
             <h3 className='font-bold text-white px-2 py-1 font-mono'>
                 {node}
                 {!isCreatingFolder && <button
@@ -59,10 +99,18 @@ const MyFiles = ({ files, node }: Props) => {
                     </button>
                 </div>
             </div>}
-            <div className='text-xs flex flex-col'>
+            <div className='grow'>
                 {files.length === 0
                     ? <span className='text-white px-2 py-1'>No files... yet.</span>
-                    : files.map((file, index) => <FileEntry node={node} key={index} file={file} isOurFile={true} isInDir={true} />)}
+                    : <SortableTree
+                        theme={FileExplorerTheme}
+                        treeData={treeData}
+                        onChange={treeData => setTreeData([...treeData])}
+                        canNodeHaveChildren={(node: TreeItem) => node.file.dir}
+                        onMoveNode={onFileMoved}
+                        getNodeKey={({ node }: { node: TreeItem }) => node.file.name}
+                    />
+                }
             </div>
         </div>
     );

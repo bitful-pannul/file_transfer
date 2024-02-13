@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import KinoFile from '../types/KinoFile'
 import KinodeApi from '@kinode/client-api'
+import { TreeFile } from '../types/TreeFile'
 
 export interface FileTransferStore {
   handleWsMessage: (message: string) => void
@@ -16,6 +17,7 @@ export interface FileTransferStore {
   knownNodes: string[]
   setKnownNodes: (knownNodes: string[]) => void
   onAddFolder: (root: string, createdFolderName: string, callback: () => void) => void
+  onMoveFile: (file: TreeFile, dest: TreeFile) => void
 }
 
 type WsMessage =
@@ -77,7 +79,28 @@ const useFileTransferStore = create<FileTransferStore>()(
         })
 
         callback()
-    },
+      },
+      onMoveFile: ({ file }: TreeFile, { file: dest }: TreeFile) => {
+        const { api, refreshFiles } = get();
+        if (!api) return alert('No API');
+        if (!file.name) return alert('No file name');
+        if (!dest.name) return alert('No destination name');
+        if (!dest.dir) return alert('No destination directory');
+        if (!window.confirm(`Are you sure you want to move ${file.name} to ${dest.name}?`)) return;
+
+        console.log('moving file', file.name, dest.name);
+        
+        api.send({
+            data: {
+                Move: {
+                    source_path: file.name,
+                    target_path: dest.name
+                }
+            }
+        })
+
+        setTimeout(() => refreshFiles(), 1000);
+      },
       refreshFiles: () => {
         const { setFiles } = get()
         console.log('refreshing files')

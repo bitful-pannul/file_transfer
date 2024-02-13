@@ -22,16 +22,17 @@ wit_bindgen::generate!({
 });
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum TransferRequest {
+pub enum KinoRequest {
     ListFiles,
     Download { name: String, target: Address },
     Progress { name: String, progress: u64 },
     Delete { name: String },
     CreateDir { name: String },
+    Move { source_path: String, target_path: String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum TransferResponse {
+pub enum KinoResponse {
     ListFiles(Vec<FileInfo>),
     Download { name: String, worker: Address },
     Done,
@@ -85,21 +86,21 @@ fn handle_transfer_request(
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
-    let Ok(transfer_request) = serde_json::from_slice::<TransferRequest>(body) else {
+    let Ok(transfer_request) = serde_json::from_slice::<KinoRequest>(body) else {
         // surfacing these quietly for now.
         print_to_terminal(2, "kino_files: error: failed to parse transfer request");
         return Ok(());
     };
 
     match transfer_request {
-        TransferRequest::ListFiles => {
+        KinoRequest::ListFiles => {
             let files = ls_files(files_dir)?;
 
             Response::new()
-                .body(serde_json::to_vec(&TransferResponse::ListFiles(files))?)
+                .body(serde_json::to_vec(&KinoResponse::ListFiles(files))?)
                 .send()?;
         }
-        TransferRequest::Download { name, target } => {
+        KinoRequest::Download { name, target } => {
             // spin up a worker, initialize based on whether it's a downloader or a sender.
             let our_worker = spawn(
                 None,
@@ -128,7 +129,7 @@ fn handle_transfer_request(
 
                     // send our initialized worker address to the other node
                     Request::new()
-                        .body(serde_json::to_vec(&TransferRequest::Download {
+                        .body(serde_json::to_vec(&KinoRequest::Download {
                             name: name.clone(),
                             target: our_worker_address,
                         })?)
@@ -147,7 +148,7 @@ fn handle_transfer_request(
                 }
             }
         }
-        TransferRequest::Progress { name, progress } => {
+        KinoRequest::Progress { name, progress } => {
             // print out in terminal and pipe to UI via websocket
             println!("file: {} progress: {}%", name, progress);
             let ws_blob = LazyLoadBlob {
@@ -169,7 +170,7 @@ fn handle_transfer_request(
                 ws_blob,
             );
         }
-        TransferRequest::Delete { name } => {
+        KinoRequest::Delete { name } => {
             if source.node != our.node {
                 return Ok(());
             }
@@ -177,13 +178,30 @@ fn handle_transfer_request(
             remove_file(&name)?;
             push_file_update_via_ws(channel_id);
         }
-        TransferRequest::CreateDir { name } => {
+        KinoRequest::CreateDir { name } => {
             if source.node != our.node {
                 return Ok(());
             }
             let path = format!("{}/{}", files_dir.path, name);
             println!("creating directory: {}", path);
             open_dir(&path, true)?;
+            push_file_update_via_ws(channel_id);
+        }
+        KinoRequest::Move { source_path, target_path } => {
+            if source.node != our.node {
+                return Ok(());
+            }
+            println!("moving file: {} to {}", source_path, target_path);
+            let filename = source_path.split("/").last().unwrap_or(&source_path);
+            let file = open_file(&source_path, false)?;
+            println!("opened file: {}", source_path);
+            let dest_path = format!("{}/{}", target_path, filename).replace("//", "/");
+            let dest_file = create_file(&dest_path)?;
+            println!("created file: {}", dest_path);
+            dest_file.write(&file.read()?)?;
+            println!("wrote file: {}", dest_path);
+            remove_file(&source_path)?;
+            println!("removed file: {}", source_path);
             push_file_update_via_ws(channel_id);
         }
     }
@@ -228,7 +246,7 @@ fn handle_http_request(
                         }
                        
                         let resp = Request::new()
-                            .body(serde_json::to_vec(&TransferRequest::ListFiles)?)
+                            .body(serde_json::to_vec(&KinoRequest::ListFiles)?)
                             .target(&remote_node)
                             .send_and_await_response(5)??;
 
@@ -239,7 +257,7 @@ fn handle_http_request(
                     let mut headers = HashMap::new();
                     headers.insert("Content-Type".to_string(), "application/json".to_string());
 
-                    let body = serde_json::to_vec(&TransferResponse::ListFiles(files))?;
+                    let body = serde_json::to_vec(&KinoResponse::ListFiles(files))?;
 
                     send_response(StatusCode::OK, Some(headers), body);
                 }
@@ -361,21 +379,21 @@ fn push_file_update_via_ws(channel_id: &mut u32) {
 }
 
 fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
-    let Ok(transfer_response) = serde_json::from_slice::<TransferResponse>(body) else {
+    let Ok(transfer_response) = serde_json::from_slice::<KinoResponse>(body) else {
         // surfacing these quietly for now.
         print_to_terminal(2, "kino_files: error: failed to parse transfer response");
         return Ok(());
     };
 
     match transfer_response {
-        TransferResponse::ListFiles(files) => {
+        KinoResponse::ListFiles(files) => {
             println!("got files from node: {:?} ,files: {:?}", source, files);
 
             if is_http {
                 let mut headers = HashMap::new();
                 headers.insert("Content-Type".to_string(), "application/json".to_string());
 
-                let body = serde_json::to_vec(&TransferResponse::ListFiles(files))?;
+                let body = serde_json::to_vec(&KinoResponse::ListFiles(files))?;
 
                 send_response(StatusCode::OK, Some(headers), body)
             }
@@ -445,7 +463,7 @@ impl Guest for Component {
 
         serve_ui(&our, &"ui", true, false, vec!["/"]).unwrap();
         bind_http_path("/files", false, false).unwrap();
-        bind_ws_path("/", true, false).unwrap();
+        bind_ws_path("/", false, false).unwrap();
 
         let mut channel_id: u32 = 69;
 

@@ -79,7 +79,7 @@ const SearchFiles = function() {
             {foundFiles && foundFiles.length > 0 && <div className='flex flex-col px-2 py-1'>
                 <h2><span className='text-xl font-bold font-mono'>{searchTerm}:</span> <span className='text-xs'>{foundFiles.length} files</span></h2>
                 {foundFiles.map((file) => (
-                    <FileEntry node={searchTerm} key={file.name} file={file} isOurFile={false} isInDir={true} />                
+                    <FileEntry node={searchTerm} key={file.name} file={file} isOurFile={false}  />                
                 ))}
             </div>}
         </div>

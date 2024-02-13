@@ -70,32 +70,44 @@ function App() {
 
   return (
     <div className='flex text-white'>
-      <div className='flex flex-col w-1/4 bg-gray-800 h-screen sidebar'>
+      <div className='flex flex-col w-1/2 bg-gray-800 h-screen sidebar'>
         <h2 className='text-2xl font-bold px-2 py-1'>Kino Files</h2>
-        <div className='flex flex-col mt-4'>
-          <h3 className='text-xl font-bold px-2 py-1'>Upload</h3>
-          <div className='flex flex-col px-2 py-1'>
-            <label htmlFor='files' className='bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded cursor-pointer text-center'>
-              Choose Files
-              <input id='files' type='file' hidden multiple onChange={onAddFiles} />
-            </label>
+        <div className='flex flex-col mt-4 grow'>
+          <div className='flex place-items-center'>
+            <h3 className='text-xl font-bold px-2 py-1'>Upload</h3>
+            <div className='flex flex-col px-2 py-1'>
+              {filesToUpload.length === 0 && <label htmlFor='files' className='bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded cursor-pointer text-center'>
+                Choose Files
+                <input id='files' type='file' hidden multiple onChange={onAddFiles} />
+              </label>}
 
-            {filesToUpload.length > 0 && (
-              <div className='flex flex-col px-2 py-1'>
-                <div className='flex flex-row justify-between px-2 py-1'>
-                  <span>{filesToUpload.length} files selected</span>
-                  <span>{filesToUpload.reduce((acc, file) => acc + file.size, 0)}</span>
+              {filesToUpload.length > 0 && (
+                <div className='flex flex-col px-2 py-1'>
+                  <div className='flex flex-row justify-between px-2 py-1'>
+                    <div className='flex flex-col'>
+                      {filesToUpload.map((file) => (
+                        <span key={file.name}>{file.name}</span>
+                      ))}
+                    </div>
+                    <span>{filesToUpload.length} files selected</span>
+                    <div className='flex flex-row'>
+                      <button className='bg-red-500 hover:bg-red-700 font-bold py-2 px-4 rounded' onClick={() => setFilesToUpload([])}>
+                        Clear
+                      </button>
+                    </div>
+                    <span>Total: {filesToUpload.reduce((acc, file) => acc + file.size, 0)} bytes</span>
+                  </div>
+                  <button className='bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded' onClick={onUploadFiles}>
+                    Upload
+                  </button>
                 </div>
-                <button className='bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded' onClick={onUploadFiles}>
-                  Upload
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           <MyFiles node={window.our.node} files={files} />
         </div>
       </div>
-      <div className='flex flex-col w-3/4 bg-gray-900 h-screen content px-2 py-1 overflow-y-auto'>
+      <div className='flex flex-col w-1/2 bg-gray-900 h-screen content px-2 py-1 overflow-y-auto'>
         <SearchFiles />
       </div>
     </div>

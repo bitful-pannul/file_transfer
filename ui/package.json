@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@kinode/client-api": "^0.1.0",
+    "@nosferatu500/react-sortable-tree": "^4.4.0",
+    "@nosferatu500/theme-file-explorer": "^3.0.21",
     "classnames": "^2.5.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -23,6 +25,7 @@
     "@types/node": "^20.11.4",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
+    "@types/react-sortable-tree": "^0.3.23",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
     "@typescript-eslint/parser": "^6.14.0",
     "@vitejs/plugin-react": "^4.2.1",

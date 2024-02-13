@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import KinoFile from "../types/KinoFile";
 import useFileTransferStore from "../store/fileTransferStore";
 import classNames from "classnames";
-import { CgChevronDown, CgChevronRight, CgClose, CgFolderAdd, CgMathPlus } from 'react-icons/cg'
+import { CgClose, CgFolderAdd, CgMathPlus } from 'react-icons/cg'
+import { trimPathToFilename } from "../utils/file";
 
 interface Props {
     file: KinoFile
     node: string
     isOurFile: boolean
-    isInDir: boolean
 }
-function FileEntry({ file, node, isOurFile, isInDir }: Props) {
+function FileEntry({ file, node, isOurFile }: Props) {
     const { filesInProgress, api, refreshFiles, onAddFolder } = useFileTransferStore();
     const [actualFilename, setActualFilename] = useState<string>('')
     const [actualFileSize, setActualFileSize] = useState<string>('')
@@ -18,12 +18,12 @@ function FileEntry({ file, node, isOurFile, isInDir }: Props) {
     const [createdFolderName, setCreatedFolderName] = useState<string>('')
     const [downloading, setDownloading] = useState<boolean>(false)
     const [isDirectory, setIsDirectory] = useState<boolean>(false)
-    const [expanded, setExpanded] = useState<boolean>(false)
+    const [showButtons, setShowButtons] = useState<boolean>(false)
 
     const showDownload = node !== window.our.node && !isDirectory;
 
     useEffect(() => {
-        const filename = file.name.split('/').pop() || '';
+        const filename = trimPathToFilename(file.name);
         setActualFilename(filename);
     }, [file.name])
 
@@ -81,7 +81,7 @@ function FileEntry({ file, node, isOurFile, isInDir }: Props) {
     const downloadInProgress = downloading || (downloadInfo?.[1] || 100) < 100;
     const downloadComplete = (downloadInfo?.[1] || 0) === 100;
     const onFolderAdded = () => {
-        onAddFolder(file.name, createdFolderName, () => {
+        onAddFolder(actualFilename, createdFolderName, () => {
             setIsCreatingFolder(false);
 
             setTimeout(() => {
@@ -91,24 +91,19 @@ function FileEntry({ file, node, isOurFile, isInDir }: Props) {
     };
 
     return (
-    <div className={classNames('flex flex-col pl-2 py-1', { 
-        'border border-b-0 border-r-0 border-t-0 border-gray-400': isInDir,
-    })}>
+    <div 
+        className={classNames('flex flex-col px-2 py-1 max-w-[40vw] self-stretch grow', { 'bg-white/10 rounded': !file.dir })}
+        onMouseEnter={() => setShowButtons(true)}
+        onMouseLeave={() => setShowButtons(false)}
+    >
         <div className='flex flex-row justify-between place-items-center'>
-            {isDirectory && <div className="flex place-items-start">
-                <button className={classNames('text-xs px-2 py-1 rounded mr-1',
-                    { 'bg-gray-700/50': expanded, 'bg-gray-500/50 hover:bg-gray-700/50': !expanded }
-                )} onClick={() => setExpanded(!expanded)}>
-                    {expanded ? <CgChevronDown /> : <CgChevronRight />}
-                </button>
-            </div>}
-            <span className='break-all grow mr-1'>
+            <span className='whitespace-pre-wrap grow mr-1'>
                 {actualFilename}
                 {file.dir && <span className='text-white text-xs px-2 py-1'>
                     {`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`}
                 </span>}
             </span>
-            <span>{actualFileSize}</span>
+            <span className="text-xs ml-1">{actualFileSize}</span>
             {showDownload && <button 
                 disabled={isOurFile || downloadInProgress || downloadComplete}
                 className={classNames('font-bold py-1 px-2 rounded ml-2', {
@@ -126,15 +121,15 @@ function FileEntry({ file, node, isOurFile, isInDir }: Props) {
                             : 'Save to node'}
             </button>}
             {isDirectory && isOurFile && !isCreatingFolder && <button
-                className='bg-gray-500/50 hover:bg-gray-700/50 font-bold py-1 px-2 rounded'
-                onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-            >
+                className={classNames('bg-gray-500/50 hover:bg-gray-700/50 font-bold py-1 px-2 rounded', { 'invisible': !showButtons })}
+                onClick={() => isOurFile && setIsCreatingFolder(!isCreatingFolder)}
+                >
                 <CgFolderAdd />
             </button>}
-            {isOurFile && <button
-                className='bg-gray-500/50 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mx-2'
+            {isOurFile && !isCreatingFolder && <button
+                className={classNames('bg-gray-500/50 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mx-2', { 'invisible': !showButtons })}
                 onClick={onDelete}
-            >
+                >
                 <CgClose />
             </button>}
         </div>
@@ -161,9 +156,6 @@ function FileEntry({ file, node, isOurFile, isInDir }: Props) {
                     <CgClose />
                 </button>
             </div>
-        </div>}
-        {isDirectory && expanded && file.dir && file.dir.length > 0 && <div className="flex flex-col">
-            {file.dir.map((dir, index) => <FileEntry isOurFile={isOurFile} key={index} file={dir} node={node} isInDir={true} />)}
         </div>}
     </div>
   );
