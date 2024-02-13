@@ -2,13 +2,13 @@
 import KinoFile from '../types/KinoFile';
 import { useEffect, useState } from 'react';
 import useFileTransferStore from '../store/fileTransferStore';
-import { CgClose, CgFolderAdd, CgMathPlus } from 'react-icons/cg';
 import '@nosferatu500/react-sortable-tree/style.css';
 import SortableTree, { TreeItem, toggleExpandedForAll } from '@nosferatu500/react-sortable-tree';
 import FileExplorerTheme from '@nosferatu500/theme-file-explorer';
 import FileEntry from './FileEntry';
 import { TreeFile } from '../types/TreeFile';
 import { getRootPath } from '../utils/file';
+import { FaFolderPlus, FaX } from 'react-icons/fa6';
 
 interface Props {
   files: KinoFile[];
@@ -78,7 +78,7 @@ const MyFiles = ({ files, node }: Props) => {
                     className='bg-gray-500/50 hover:bg-gray-700/50 py-1 px-2 rounded ml-2 self-stretch'
                     onClick={() => setIsCreatingFolder(!isCreatingFolder)}
                 >
-                    <CgFolderAdd />
+                    <FaFolderPlus />
                 </button>}
                 <button
                     onClick={() => expand(true)}
@@ -107,13 +107,13 @@ const MyFiles = ({ files, node }: Props) => {
                         className='bg-blue-500 hover:bg-blue-700 font-bold py-1 px-2 rounded ml-2 text-xs'
                         onClick={onFolderAdded}
                     >
-                        <CgMathPlus />
+                        <FaFolderPlus />
                     </button>
                     <button
                         className='bg-gray-800 hover:bg-red-700 text-white font-bold py-0 px-1 rounded ml-2'
                         onClick={() => setIsCreatingFolder(false)}
                     >
-                        <CgClose />
+                        <FaX />
                     </button>
                 </div>
             </div>}

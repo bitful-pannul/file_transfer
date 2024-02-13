@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import KinoFile from "../types/KinoFile";
 import useFileTransferStore from "../store/fileTransferStore";
 import classNames from "classnames";
-import { CgClose, CgFolderAdd, CgMathPlus } from 'react-icons/cg'
 import { trimPathToFilename } from "../utils/file";
+import { FileIcon } from "./FileIcon";
+import { FaFolderPlus, FaPlus, FaX } from "react-icons/fa6";
 
 interface Props {
     file: KinoFile
@@ -97,7 +98,8 @@ function FileEntry({ file, node, isOurFile }: Props) {
         onMouseLeave={() => setShowButtons(false)}
     >
         <div className='flex flex-row justify-between place-items-center'>
-            <span className='whitespace-pre-wrap grow mr-1'>
+            <span className='flex whitespace-pre-wrap grow mr-1'>
+                <FileIcon file={file} />
                 {actualFilename}
                 {file.dir && <span className='text-white text-xs px-2 py-1'>
                     {`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`}
@@ -124,13 +126,13 @@ function FileEntry({ file, node, isOurFile }: Props) {
                 className={classNames('bg-gray-500/50 hover:bg-gray-700/50 font-bold py-1 px-2 rounded', { 'invisible': !showButtons })}
                 onClick={() => isOurFile && setIsCreatingFolder(!isCreatingFolder)}
                 >
-                <CgFolderAdd />
+                <FaFolderPlus />
             </button>}
             {isOurFile && !isCreatingFolder && <button
                 className={classNames('bg-gray-500/50 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mx-2', { 'invisible': !showButtons })}
                 onClick={onDelete}
                 >
-                <CgClose />
+                <FaX />
             </button>}
         </div>
         {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-1'>
@@ -147,13 +149,13 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     className='bg-blue-500 hover:bg-blue-700 font-bold py-1 px-2 rounded ml-2 text-xs'
                     onClick={onFolderAdded}
                 >
-                    <CgMathPlus />
+                    <FaPlus />
                 </button>
                 <button
                     className='bg-gray-800 hover:bg-red-700 text-white font-bold py-0 px-1 rounded ml-2'
                     onClick={() => setIsCreatingFolder(false)}
                 >
-                    <CgClose />
+                    <FaX />
                 </button>
             </div>
         </div>}

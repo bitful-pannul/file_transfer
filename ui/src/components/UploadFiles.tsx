@@ -1,6 +1,6 @@
 import { useState } from "react";
 import useFileTransferStore from "../store/fileTransferStore";
-import { CgClose } from "react-icons/cg";
+import { FaX } from "react-icons/fa6";
 
 const UploadFiles = () => {
   const [filesToUpload, setFilesToUpload] = useState<File[]>([])
@@ -53,7 +53,7 @@ const UploadFiles = () => {
                   key={file.name}
                   className="flex place-items-center bg-gray-800 hover:bg-gray-700/50 font-bold py-1 px-2 rounded cursor-pointer"
                   onClick={() => onRemoveFileToUpload(file)}
-                >{file.name} <CgClose className="ml-auto pl-1" /></li>
+                >{file.name} <FaX className="ml-auto pl-1" /></li>
               ))}
             </ul>
             <span>{filesToUpload.length} files selected</span>
