@@ -193,9 +193,13 @@ fn handle_transfer_request(
             }
             println!("moving file: {} to {}", source_path, target_path);
             let filename = source_path.split("/").last().unwrap_or(&source_path);
+            let dest_path = format!("{}/{}", target_path, filename).replace("//", "/");
+            if dest_path == source_path {
+                println!("source and target are the same, skipping move");
+                return Ok(());
+            }
             let file = open_file(&source_path, false)?;
             println!("opened file: {}", source_path);
-            let dest_path = format!("{}/{}", target_path, filename).replace("//", "/");
             let dest_file = create_file(&dest_path)?;
             println!("created file: {}", dest_path);
             dest_file.write(&file.read()?)?;

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import useFileTransferStore from '../store/fileTransferStore';
 import { CgClose, CgFolderAdd, CgMathPlus } from 'react-icons/cg';
 import '@nosferatu500/react-sortable-tree/style.css';
-import SortableTree, { TreeItem } from '@nosferatu500/react-sortable-tree';
+import SortableTree, { TreeItem, toggleExpandedForAll } from '@nosferatu500/react-sortable-tree';
 import FileExplorerTheme from '@nosferatu500/theme-file-explorer';
 import FileEntry from './FileEntry';
 import { TreeFile } from '../types/TreeFile';
@@ -20,6 +20,7 @@ const MyFiles = ({ files, node }: Props) => {
     const [createdFolderName, setCreatedFolderName] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
     const [treeData, setTreeData] = useState<TreeItem[]>([])
+    const [expandedFiles, setExpandedFiles] = useState<{ [path: string]: boolean }>({})
 
     const onFolderAdded = () => {
         onAddFolder('', createdFolderName, () => {
@@ -36,6 +37,7 @@ const MyFiles = ({ files, node }: Props) => {
             title: <FileEntry file={file} node={our.node} isOurFile={true} />,
             children: file.dir ? file.dir.map((f: KinoFile) => treeifyFile(f)) : undefined,
             file,
+            expanded: !!expandedFiles[file.name]
         } as TreeItem;
     }
 
@@ -63,17 +65,33 @@ const MyFiles = ({ files, node }: Props) => {
         console.log({ td })
         setTreeData(td);
     }, [files]);
+
+    const expand = (expanded: boolean) => {
+        setTreeData(toggleExpandedForAll({ treeData, expanded }))
+    }
     
     return (
         <div className='flex flex-col grow self-stretch'>
-            <h3 className='font-bold text-white px-2 py-1 font-mono'>
-                {node}
+            <h3 className='px-2 py-1 flex place-items-center'>
+                <span className='font-mono font-bold'>{node}</span>
                 {!isCreatingFolder && <button
-                    className='bg-gray-500/50 hover:bg-gray-700/50 font-bold py-1 px-2 rounded ml-2'
+                    className='bg-gray-500/50 hover:bg-gray-700/50 py-1 px-2 rounded ml-2 self-stretch'
                     onClick={() => setIsCreatingFolder(!isCreatingFolder)}
                 >
                     <CgFolderAdd />
                 </button>}
+                <button
+                    onClick={() => expand(true)}
+                    className='bg-gray-500/50 hover:bg-gray-700/50 py-1 px-2 rounded ml-2 self-stretch'
+                >
+                    Expand All
+                </button>
+                <button
+                    onClick={() => expand(false)}
+                    className='bg-gray-500/50 hover:bg-gray-700/50 py-1 px-2 rounded ml-2 self-stretch'
+                >
+                    Collapse All
+                </button>
             </h3>
             {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-1'>
                 <span className='text-xs mx-auto mb-1'>Create a new folder in /:</span>
@@ -109,6 +127,9 @@ const MyFiles = ({ files, node }: Props) => {
                         canNodeHaveChildren={(node: TreeItem) => node.file.dir}
                         onMoveNode={onFileMoved}
                         getNodeKey={({ node }: { node: TreeItem }) => node.file.name}
+                        onVisibilityToggle={({ expanded, node }) => {
+                            setExpandedFiles((prev) => ({ ...prev, [node.file]: expanded }))
+                        }}
                     />
                 }
             </div>

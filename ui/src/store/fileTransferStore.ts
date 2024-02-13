@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import KinoFile from '../types/KinoFile'
 import KinodeApi from '@kinode/client-api'
 import { TreeFile } from '../types/TreeFile'
+import { getRootPath } from '../utils/file'
 
 export interface FileTransferStore {
   handleWsMessage: (message: string) => void
@@ -86,10 +87,12 @@ const useFileTransferStore = create<FileTransferStore>()(
         if (!file.name) return alert('No file name');
         if (!dest.name) return alert('No destination name');
         if (!dest.dir) return alert('No destination directory');
+        if (getRootPath(file.name) === dest.name) return alert('Cannot move a file in-place');
+        if (file.name === dest.name) return;
         if (!window.confirm(`Are you sure you want to move ${file.name} to ${dest.name}?`)) return;
 
         console.log('moving file', file.name, dest.name);
-        
+
         api.send({
             data: {
                 Move: {

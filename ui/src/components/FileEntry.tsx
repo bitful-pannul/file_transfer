@@ -92,7 +92,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
 
     return (
     <div 
-        className={classNames('flex flex-col px-2 py-1 max-w-[40vw] self-stretch grow', { 'bg-white/10 rounded': !file.dir })}
+        className={classNames('flex flex-col pl-2 py-1 max-w-[40vw] self-stretch grow', { 'bg-white/10 rounded': !file.dir })}
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
     >
