@@ -1,13 +1,15 @@
 {
-  "name": "kino_files",
-  "subtitle": "Kino Files",
-  "version": "0.1.0",
-  "website": "https://github.com/bitful-pannul/file_transfer",
-  "mirrors": [
+  "name": "Kino Files",
+  "properties": {
+    "package_name": "kino_files",
+    "current_version": "0.1.0",
+    "mirrors": [
       "mothu-et-doria.os",
       "gloriainexcelsisdeo.os"
-  ],
-  "versions": [
-      "d55716c0e81b93336be3299aff7a91dd3f3f720f2c673e226e3afe230d866c9c"
-  ]
+    ],
+    "code_hashes": {
+      "0.1.0": "d55716c0e81b93336be3299aff7a91dd3f3f720f2c673e226e3afe230d866c9c"
+    }
+  },
+  "external_url": "https://github.com/bitful-pannul/file_transfer"
 }
