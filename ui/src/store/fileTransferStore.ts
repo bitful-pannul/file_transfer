@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import KinoFile from '../types/KinoFile'
 import KinodeApi from '@kinode/client-api'
 import { TreeFile } from '../types/TreeFile'
-import { getRootPath } from '../utils/file'
+import { trimPathToFolder } from '../utils/file'
 
 export interface FileTransferStore {
   handleWsMessage: (message: string) => void
@@ -19,6 +19,9 @@ export interface FileTransferStore {
   setKnownNodes: (knownNodes: string[]) => void
   onAddFolder: (root: string, createdFolderName: string, callback: () => void) => void
   onMoveFile: (file: TreeFile, dest: TreeFile) => void
+  errors: string[]
+  setErrors: (errors: string[]) => void
+  clearErrors: () => void
 }
 
 type WsMessage =
@@ -31,13 +34,16 @@ const useFileTransferStore = create<FileTransferStore>()(
       files: [],
       filesInProgress: {},
       knownNodes: [],
+      errors: [],
+      clearErrors: () => set({ errors: [] }),
       setKnownNodes: (knownNodes) => set({ knownNodes }),
+      setErrors: (errors) => set({ errors }),
       api: null,
       setApi: (api) => set({ api }),
       setFilesInProgress: (filesInProgress) => set({ filesInProgress }),
       setFiles: (files) => set({ files }),    
       handleWsMessage: (json: string | Blob) => {
-        const { filesInProgress, setFilesInProgress, setKnownNodes } = get()
+        const { filesInProgress, setFilesInProgress, setKnownNodes, refreshFiles, setErrors, errors } = get()
         if (typeof json === 'string') {
           try {
             console.log('WS: GOT MESSAGE', json)
@@ -51,12 +57,15 @@ const useFileTransferStore = create<FileTransferStore>()(
                 get().refreshFiles()
               }
             } else if (kind === 'uploaded') {
-              get().refreshFiles()
+              refreshFiles()
             } else if (kind === 'file_update') {
-              get().refreshFiles()
+              refreshFiles()
             } else if (kind === 'state') {
               const { known_nodes } = data
               setKnownNodes(known_nodes)
+            } else if (kind === 'error') {
+              console.log({ error: data })
+              setErrors([...errors, data])
             }
           } catch (error) {
             console.error("Error parsing WebSocket message", error);
@@ -83,15 +92,14 @@ const useFileTransferStore = create<FileTransferStore>()(
       },
       onMoveFile: ({ file }: TreeFile, { file: dest }: TreeFile) => {
         const { api, refreshFiles } = get();
+        console.log('moving file', file.name, dest.name);
         if (!api) return alert('No API');
         if (!file.name) return alert('No file name');
         if (!dest.name) return alert('No destination name');
         if (!dest.dir) return alert('No destination directory');
-        if (getRootPath(file.name) === dest.name) return alert('Cannot move a file in-place');
-        if (file.name === dest.name) return;
+        if (trimPathToFolder(file.name) === dest.name) return;
+        if (file.name === dest.name) return alert('Cannot move a file in-place');
         if (!window.confirm(`Are you sure you want to move ${file.name} to ${dest.name}?`)) return;
-
-        console.log('moving file', file.name, dest.name);
 
         api.send({
             data: {

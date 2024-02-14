@@ -4,8 +4,8 @@ use kinode_process_lib::{
         bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
         StatusCode, WsMessageType,
     }, our_capabilities, print_to_terminal, println, set_state, spawn, vfs::{
-        create_drive, create_file, metadata, open_dir, open_file, remove_file,
-        Directory, File, FileType
+        create_drive, create_file, metadata, open_dir, open_file, remove_file, remove_dir,
+        Directory, FileType
     }, Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response
 };
 use serde::{Deserialize, Serialize};
@@ -175,7 +175,12 @@ fn handle_transfer_request(
                 return Ok(());
             }
             println!("deleting file: {}", name);
-            remove_file(&name)?;
+            let meta = metadata(&name)?;
+            if meta.file_type == FileType::Directory {
+                remove_dir(&name)?;
+            } else {
+                remove_file(&name)?;
+            }
             push_file_update_via_ws(channel_id);
         }
         KinoRequest::CreateDir { name } => {
@@ -330,7 +335,7 @@ fn handle_http_request(
             }
         }
         HttpServerRequest::WebSocketClose(_) => {}
-        HttpServerRequest::WebSocketOpen { channel_id, path } => {
+        HttpServerRequest::WebSocketOpen { channel_id, .. } => {
             *our_channel_id = channel_id;
 
             push_state_via_ws(our_channel_id);
@@ -374,6 +379,23 @@ fn push_file_update_via_ws(channel_id: &mut u32) {
             bytes: serde_json::json!({
                 "kind": "file_update",
                 "data": ""
+            })
+            .to_string()
+            .as_bytes()
+            .to_vec()
+        }
+    )
+}
+
+fn push_error_via_ws(channel_id: &mut u32, error: String) {
+    send_ws_push(
+        channel_id.clone(), 
+        WsMessageType::Text, 
+        LazyLoadBlob {
+            mime: Some("application/json".to_string()),
+            bytes: serde_json::json!({
+                "kind": "error",
+                "data": error
             })
             .to_string()
             .as_bytes()
@@ -476,6 +498,7 @@ impl Guest for Component {
                 Ok(()) => {}
                 Err(e) => {
                     println!("kino_files: error: {:?}", e);
+                    push_error_via_ws(&mut channel_id, e.to_string());
                 }
             };
         }

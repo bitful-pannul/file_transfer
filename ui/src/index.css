@@ -624,6 +624,10 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 40vw;
 }
 
+.flex-grow {
+  flex-grow: 1;
+}
+
 .grow {
   flex-grow: 1;
 }
@@ -717,6 +721,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .bg-white\/10 {
   background-color: rgb(255 255 255 / 0.1);
+}
+
+.bg-red-500\/50 {
+  background-color: rgb(239 68 68 / 0.5);
 }
 
 .p-1 {
@@ -842,6 +850,10 @@ h1, h2, h3, h4, h5, h6 {
 .hover\:bg-red-700:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(185 28 28 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-white\/20:hover {
+  background-color: rgb(255 255 255 / 0.2);
 }
 
 .focus\:border-blue-500:focus {

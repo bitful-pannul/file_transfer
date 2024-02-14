@@ -7,8 +7,9 @@ import SortableTree, { TreeItem, toggleExpandedForAll } from '@nosferatu500/reac
 import FileExplorerTheme from '@nosferatu500/theme-file-explorer';
 import FileEntry from './FileEntry';
 import { TreeFile } from '../types/TreeFile';
-import { getRootPath } from '../utils/file';
+import { trimPathToRootDir } from '../utils/file';
 import { FaFolderPlus, FaX } from 'react-icons/fa6';
+import classNames from 'classnames';
 
 interface Props {
   files: KinoFile[];
@@ -16,7 +17,7 @@ interface Props {
 }
 
 const MyFiles = ({ files, node }: Props) => {    
-    const { onAddFolder, onMoveFile, refreshFiles } = useFileTransferStore();
+    const { onAddFolder, onMoveFile, refreshFiles, errors, clearErrors } = useFileTransferStore();
     const [createdFolderName, setCreatedFolderName] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
     const [treeData, setTreeData] = useState<TreeItem[]>([])
@@ -50,7 +51,7 @@ const MyFiles = ({ files, node }: Props) => {
         if (!nextParentNode) {
             nextParentNode = { 
                 file: { 
-                    name: getRootPath(node.file.name), 
+                    name: trimPathToRootDir(node.file.name), 
                     dir: [], 
                     size: 0 
                 } 
@@ -128,10 +129,21 @@ const MyFiles = ({ files, node }: Props) => {
                         onMoveNode={onFileMoved}
                         getNodeKey={({ node }: { node: TreeItem }) => node.file.name}
                         onVisibilityToggle={({ expanded, node }) => {
-                            setExpandedFiles((prev) => ({ ...prev, [node.file]: expanded }))
+                            setExpandedFiles((prev) => ({ ...prev, [node?.file?.name]: expanded }))
                         }}
                     />
                 }
+            </div>
+            <div className={classNames('flex flex-col bg-red-500/50 p-1', { hidden: errors.length === 0 })}>
+                {errors.map((error, i) => <span key={i} className='px-2 py-1 flex place-items-center'>
+                    <span className='flex-grow'>{error}</span>
+                    <button 
+                        className='bg-white/10 hover:bg-white/20 py-1 px-1 rounded ml-2'
+                        onClick={clearErrors}
+                    >
+                        <FaX />
+                    </button>
+                </span>)}
             </div>
         </div>
     );
