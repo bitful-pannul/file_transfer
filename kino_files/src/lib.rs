@@ -1,11 +1,10 @@
 use kinode::process::standard::get_blob;
 use kinode_process_lib::{
-    await_message, get_state, http::{
+    await_message, get_typed_state, http::{
         bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
         StatusCode, WsMessageType,
     }, our_capabilities, print_to_terminal, println, set_state, spawn, vfs::{
-        create_drive, create_file, metadata, open_dir, open_file, remove_file, remove_dir,
-        Directory, FileType
+        create_drive, create_file, metadata, open_dir, open_file, remove_dir, remove_file, Directory, FileType
     }, Address, LazyLoadBlob, Message, OnExit, ProcessId, Request, Response
 };
 use serde::{Deserialize, Serialize};
@@ -22,6 +21,12 @@ wit_bindgen::generate!({
 });
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct NodePermission {
+    node: String,
+    allow: Option<bool>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub enum KinoRequest {
     ListFiles,
     Download { name: String, target: Address },
@@ -29,6 +34,7 @@ pub enum KinoRequest {
     Delete { name: String },
     CreateDir { name: String },
     Move { source_path: String, target_path: String },
+    ChangePermissions { path: String, perm: Option<NodePermission> },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -54,53 +60,83 @@ pub enum WorkerRequest {
     },
 }
 
-fn ls_files(files_dir: &Directory) -> anyhow::Result<Vec<FileInfo>> {
+fn ls_files(source: &Address, our: &Address, files_dir: &Directory) -> anyhow::Result<Vec<FileInfo>> {
     let entries = files_dir.read()?;
     let files: Vec<FileInfo> = entries
         .iter()
-        .filter_map(|file| match file.file_type {
-            FileType::File => match metadata(&file.path) {
-                Ok(metadata) => Some(FileInfo {
+        .filter_map(|file| {
+            if source.node != our.node && !node_has_perms_to_path(&source.node, &file.path) {
+                return None;
+            }
+            match file.file_type {
+                FileType::File => match metadata(&file.path) {
+                    Ok(metadata) => Some(FileInfo {
+                        name: file.path.clone(),
+                        size: metadata.len,
+                        dir: None,
+                    }),
+                    Err(_) => None,
+                },
+                FileType::Directory => Some(FileInfo {
                     name: file.path.clone(),
-                    size: metadata.len,
-                    dir: None,
+                    size: 0,
+                    dir: Some(ls_files(source, our, &open_dir(&file.path, false).unwrap()).unwrap()),
                 }),
-                Err(_) => None,
-            },
-            FileType::Directory => Some(FileInfo {
-                name: file.path.clone(),
-                size: 0,
-                dir: Some(ls_files(&open_dir(&file.path, false).unwrap()).unwrap()),
-            }),
-            _ => None,
+                _ => None,
+            }
         })
         .collect();
 
     Ok(files)
 }
 
-fn handle_transfer_request(
+fn node_has_perms_to_path(node: &String, path: &String) -> bool {
+    let path = path.split("/files/").last().unwrap_or(path);
+    let state = get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?)).unwrap_or(empty_state());
+    // println!("checking perms for path {} from node {} among {:?}", path, node, state.permissions);
+    let permissions = state.permissions.get(path);
+    match permissions {
+        Some(perms) => {
+            if let Some(&is_permitted) = perms.get(node) {
+                // println!("{} is permitted to access {}? {}", node, path, is_permitted);
+                return is_permitted;
+            }
+            // If the node is not explicitly mentioned, it's allowed if all other permissions are false (forbiddances only).
+            let is_permitted = perms.values().all(|&perm| !perm);
+            // println!("{} is? permitted to access {}? {}", node, path, is_permitted);
+            is_permitted
+        },
+        None => true, // If there are no permissions set for this path, it's accessible to all.
+    }
+}
+
+fn handle_kinofiles_request(
     our: &Address,
     source: &Address,
     body: &Vec<u8>,
     files_dir: &Directory,
     channel_id: &mut u32,
 ) -> anyhow::Result<()> {
-    let Ok(transfer_request) = serde_json::from_slice::<KinoRequest>(body) else {
-        // surfacing these quietly for now.
-        print_to_terminal(2, "kino_files: error: failed to parse transfer request");
-        return Ok(());
+    let Ok(kino_req) = serde_json::from_slice::<KinoRequest>(body) else {
+        // println!("kino_files: error: failed to parse request: {}", String::from_utf8_lossy(&body));
+        return Ok(())
     };
 
-    match transfer_request {
+    match kino_req {
         KinoRequest::ListFiles => {
-            let files = ls_files(files_dir)?;
-
+            let files = ls_files(source, our, files_dir)?;
+            
             Response::new()
                 .body(serde_json::to_vec(&KinoResponse::ListFiles(files))?)
                 .send()?;
         }
         KinoRequest::Download { name, target } => {
+            // check if source has permission to see the file. if so, they may also download it
+            let files_available_to_node = ls_files(source, our, files_dir)?;
+            if !files_available_to_node.iter().any(|file| file.name == name) {
+                return Ok(());
+            }
+
             // spin up a worker, initialize based on whether it's a downloader or a sender.
             let our_worker = spawn(
                 None,
@@ -150,7 +186,7 @@ fn handle_transfer_request(
         }
         KinoRequest::Progress { name, progress } => {
             // print out in terminal and pipe to UI via websocket
-            println!("file: {} progress: {}%", name, progress);
+            println!("kino_files: file: {} progress: {}%", name, progress);
             let ws_blob = LazyLoadBlob {
                 mime: Some("application/json".to_string()),
                 bytes: serde_json::json!({
@@ -174,7 +210,7 @@ fn handle_transfer_request(
             if source.node != our.node {
                 return Ok(());
             }
-            println!("deleting file: {}", name);
+            println!("kino_files: deleting file: {}", name);
             let meta = metadata(&name)?;
             if meta.file_type == FileType::Directory {
                 remove_dir(&name)?;
@@ -188,7 +224,7 @@ fn handle_transfer_request(
                 return Ok(());
             }
             let path = format!("{}/{}", files_dir.path, name);
-            println!("creating directory: {}", path);
+            println!("kino_files: creating directory: {}", path);
             open_dir(&path, true)?;
             push_file_update_via_ws(channel_id);
         }
@@ -196,22 +232,46 @@ fn handle_transfer_request(
             if source.node != our.node {
                 return Ok(());
             }
-            println!("moving file: {} to {}", source_path, target_path);
+            println!("kino_files: moving file: {} to {}", source_path, target_path);
             let filename = source_path.split("/").last().unwrap_or(&source_path);
             let dest_path = format!("{}/{}", target_path, filename).replace("//", "/");
             if dest_path == source_path {
-                println!("source and target are the same, skipping move");
                 return Ok(());
             }
             let file = open_file(&source_path, false)?;
-            println!("opened file: {}", source_path);
             let dest_file = create_file(&dest_path)?;
-            println!("created file: {}", dest_path);
             dest_file.write(&file.read()?)?;
-            println!("wrote file: {}", dest_path);
             remove_file(&source_path)?;
-            println!("removed file: {}", source_path);
             push_file_update_via_ws(channel_id);
+        }
+        KinoRequest::ChangePermissions { path, perm } => {
+            if source.node != our.node {
+                return Err(anyhow::anyhow!("permit path request from non-local node"));
+            }
+            println!("kino_files: changing perms for path: {}", path);
+            let mut state = get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?))
+                .unwrap_or(empty_state());
+            match perm {
+                None => {
+                    // println!("kino_files: removing all perms for file");
+                    state.permissions.remove(&path);
+                },
+                Some(NodePermission { node, allow }) => {
+                    let path_perms = state.permissions
+                        .entry(path.clone())
+                        .or_insert_with(|| HashMap::new());
+                    if let Some(new_perm) = allow {
+                        // println!("kino_files: adding perms for node: {} to path: {} with perm: {}", node, path, new_perm);
+                        path_perms.insert(node.clone(), new_perm);
+                    } else {
+                        // println!("kino_files: removing perms for node: {} from path: {}", node, path);
+                        path_perms.remove(&node);
+                    }
+                },
+            }
+            // println!("kino_files: new perms: {:?}", state);
+            set_state(&serde_json::to_vec(&state)?);
+            push_state_via_ws(channel_id);
         }
     }
 
@@ -238,20 +298,13 @@ fn handle_http_request(
                             process: our.process.clone(),
                         };
 
-                        match serde_json::from_slice::<FileTransferState>(&get_state().unwrap()) {
-                            Ok(state) => {
-                                if !state.known_nodes.contains(&remote_node) {
-                                    let mut state = state;
-                                    state.known_nodes.push(remote_node.clone());
-                                    set_state(&serde_json::to_vec(&state)?);
-                                }
-                            }
-                            Err(_) => {
-                                let state = FileTransferState {
-                                    known_nodes: vec![remote_node.clone()],
-                                };
-                                set_state(&serde_json::to_vec(&state)?);
-                            }
+                        let state = get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?))
+                            .unwrap_or(empty_state());
+
+                        if !state.known_nodes.contains(&remote_node.node) {
+                            let mut state = state;
+                            state.known_nodes.push(remote_node.node.clone());
+                            set_state(&serde_json::to_vec(&state)?);
                         }
                        
                         let resp = Request::new()
@@ -259,10 +312,10 @@ fn handle_http_request(
                             .target(&remote_node)
                             .send_and_await_response(5)??;
 
-                        handle_transfer_response(source, &resp.body().to_vec(), true)?;
+                        handle_kinofiles_response(source, &resp.body().to_vec(), true)?;
                     }
 
-                    let files = ls_files(files_dir)?;
+                    let files = ls_files(source, our, files_dir)?;
                     let mut headers = HashMap::new();
                     headers.insert("Content-Type".to_string(), "application/json".to_string());
 
@@ -271,7 +324,9 @@ fn handle_http_request(
                     send_response(StatusCode::OK, Some(headers), body);
                 }
                 "POST" => {
-                    // upload files from UI
+                    if source.node != our.node {
+                        return Ok(());
+                    }
                     let headers = request.headers();
                     let content_type = headers
                         .get("Content-Type")
@@ -300,7 +355,7 @@ fn handle_http_request(
                         if let Some(filename) = field.headers.filename.clone() {
                             let mut buffer = Vec::new();
                             field.data.read_to_end(&mut buffer)?;
-                            println!("uploaded file {} with size {}", filename, buffer.len());
+                            println!("kino_files: uploaded file {} with size {}", filename, buffer.len());
                             let file_path = format!("{}/{}", files_dir.path, filename);
                             let file = create_file(&file_path)?;
                             file.write(&buffer)?;
@@ -347,7 +402,7 @@ fn handle_http_request(
             let Some(blob) = get_blob() else {
                 return Ok(());
             };
-            handle_transfer_request(our, source, &blob.bytes, files_dir, our_channel_id)?
+            handle_kinofiles_request(our, source, &blob.bytes, files_dir, our_channel_id)?
         }
     }
     Ok(())
@@ -361,7 +416,8 @@ fn push_state_via_ws(channel_id: &mut u32) {
             mime: Some("application/json".to_string()),
             bytes: serde_json::json!({
                 "kind": "state",
-                "data": serde_json::from_slice::<FileTransferState>(&get_state().unwrap()).unwrap()
+                "data": get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?))
+                    .unwrap_or(empty_state())
             })
             .to_string()
             .as_bytes()
@@ -404,16 +460,15 @@ fn push_error_via_ws(channel_id: &mut u32, error: String) {
     )
 }
 
-fn handle_transfer_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
-    let Ok(transfer_response) = serde_json::from_slice::<KinoResponse>(body) else {
-        // surfacing these quietly for now.
-        print_to_terminal(2, "kino_files: error: failed to parse transfer response");
+fn handle_kinofiles_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
+    let Ok(kino_res) = serde_json::from_slice::<KinoResponse>(body) else {
+        // println!("kino_files: error: failed to parse response: {}", String::from_utf8_lossy(&body));
         return Ok(());
     };
 
-    match transfer_response {
+    match kino_res {
         KinoResponse::ListFiles(files) => {
-            println!("got files from node: {:?} ,files: {:?}", source, files);
+            println!("kino_files: got files from node: {:?} ,files: {:?}", source, files);
 
             if is_http {
                 let mut headers = HashMap::new();
@@ -444,7 +499,7 @@ fn handle_message(
             ref source,
             ref body,
             ..
-        } => handle_transfer_response(source, body, false),
+        } => handle_kinofiles_response(source, body, false),
         Message::Request {
             ref source,
             ref body,
@@ -453,27 +508,22 @@ fn handle_message(
             if source.process == http_server_address {
                 handle_http_request(&our, source, body, files_dir, channel_id)?
             }
-            handle_transfer_request(&our, source, body, files_dir, channel_id)
+            handle_kinofiles_request(&our, source, body, files_dir, channel_id)
         }
     }
 }
 
-/// step 1. bind http path / central UI
-/// UI makes /GET request to get list of files
-/// optional get list of files from another node
-///     app_url/node_id   
-///     ...
-/// List<Download>
-///    GET /download?name=foo&target=app_url
-/// Progress %, pipe request through to frontend
-/// POST upload file ()
-
-
-// user-facing state
-// this is intended to be NON-ESSENTIAL, i.e., we WILL overwrite it on error
 #[derive(Serialize, Deserialize, Debug)]
 struct FileTransferState {
-    pub known_nodes: Vec<Address>,
+    pub known_nodes: Vec<String>,
+    pub permissions: HashMap<String, HashMap<String, bool>>,
+}
+
+fn empty_state() -> FileTransferState {
+    FileTransferState {
+        known_nodes: vec![],
+        permissions: HashMap::new(),
+    }
 }
 
 struct Component;
@@ -483,21 +533,22 @@ impl Guest for Component {
 
         let our = Address::from_str(&our).unwrap();
         let drive_path = create_drive(our.package_id(), "files").unwrap();
-        let state = get_state().unwrap_or_else(|| serde_json::to_vec(&FileTransferState { known_nodes: vec![] }).unwrap());
-        set_state(&state);
+        let state = get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?))
+            .unwrap_or(empty_state());
+        set_state(&serde_json::to_vec(&state).unwrap_or(vec![]));
         let files_dir = open_dir(&drive_path, false).unwrap();
 
         serve_ui(&our, &"ui", true, false, vec!["/"]).unwrap();
         bind_http_path("/files", false, false).unwrap();
         bind_ws_path("/", false, false).unwrap();
 
-        let mut channel_id: u32 = 69;
+        let mut channel_id: u32 = 1854;
 
         loop {
             match handle_message(&our, &files_dir, &mut channel_id) {
                 Ok(()) => {}
                 Err(e) => {
-                    println!("kino_files: error: {:?}", e);
+                    print_to_terminal(2, format!("kino_files: error: {:?}", e).as_str());
                     push_error_via_ws(&mut channel_id, e.to_string());
                 }
             };

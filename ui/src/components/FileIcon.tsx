@@ -5,7 +5,7 @@ export const FileIcon = (props: { file: KinoFile }) => {
     const { file } = props;
     const { name, dir } = file;
     return (
-        <div className='flex flex-row items-center w-4 mr-2'>
+        <div className='flex flex-row items-center w-4 mr-3'>
             {dir
                 ? <FaFolder />
                 : name.endsWith('.mp4') || name.endsWith('.mkv') || name.endsWith('.avi') || name.endsWith('.mov')

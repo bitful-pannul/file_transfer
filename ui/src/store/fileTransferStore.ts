@@ -3,7 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import KinoFile from '../types/KinoFile'
 import KinodeApi from '@kinode/client-api'
 import { TreeFile } from '../types/TreeFile'
-import { trimPathToFolder } from '../utils/file'
+import { trimPathToParentFolder } from '../utils/file'
+import { Permissions } from '../types/Permissions'
 
 export interface FileTransferStore {
   handleWsMessage: (message: string) => void
@@ -22,6 +23,13 @@ export interface FileTransferStore {
   errors: string[]
   setErrors: (errors: string[]) => void
   clearErrors: () => void
+  permissionsModalOpen: boolean
+  setPermissionsModalOpen: (permissionsModalOpen: boolean) => void
+  editingPermissionsForPath: string
+  setEditingPermissionsForPath: (editingPermissionsForPath: string) => void
+  onChangePermissionsForNode: (path: string, perm?: { node: string, allow?: boolean }) => void
+  permissions: Permissions
+  setPermissions: (permissions: Permissions) => void
 }
 
 type WsMessage =
@@ -41,9 +49,15 @@ const useFileTransferStore = create<FileTransferStore>()(
       api: null,
       setApi: (api) => set({ api }),
       setFilesInProgress: (filesInProgress) => set({ filesInProgress }),
+      permissionsModalOpen: false,
+      setPermissionsModalOpen: (permissionsModalOpen: boolean) => set({ permissionsModalOpen }),
+      editingPermissionsForPath: '',
+      setEditingPermissionsForPath: (editingPermissionsForPath: string) => set({ editingPermissionsForPath }),
+      permissions: {} as Permissions,
+      setPermissions: (permissions: Permissions) => set({ permissions }),
       setFiles: (files) => set({ files }),    
       handleWsMessage: (json: string | Blob) => {
-        const { filesInProgress, setFilesInProgress, setKnownNodes, refreshFiles, setErrors, errors } = get()
+        const { setPermissions, filesInProgress, setFilesInProgress, setKnownNodes, refreshFiles, setErrors, errors } = get()
         if (typeof json === 'string') {
           try {
             console.log('WS: GOT MESSAGE', json)
@@ -61,8 +75,9 @@ const useFileTransferStore = create<FileTransferStore>()(
             } else if (kind === 'file_update') {
               refreshFiles()
             } else if (kind === 'state') {
-              const { known_nodes } = data
+              const { known_nodes, permissions } = data
               setKnownNodes(known_nodes)
+              setPermissions(permissions)
             } else if (kind === 'error') {
               console.log({ error: data })
               setErrors([...errors, data])
@@ -97,7 +112,7 @@ const useFileTransferStore = create<FileTransferStore>()(
         if (!file.name) return alert('No file name');
         if (!dest.name) return alert('No destination name');
         if (!dest.dir) return alert('No destination directory');
-        if (trimPathToFolder(file.name) === dest.name) return;
+        if (trimPathToParentFolder(file.name) === dest.name) return;
         if (file.name === dest.name) return alert('Cannot move a file in-place');
         if (!window.confirm(`Are you sure you want to move ${file.name} to ${dest.name}?`)) return;
 
@@ -109,6 +124,23 @@ const useFileTransferStore = create<FileTransferStore>()(
                 }
             }
         })
+
+        setTimeout(() => refreshFiles(), 1000);
+      },
+      onChangePermissionsForNode: (path: string, perm?: { node: string, allow?: boolean }) => {
+        const { api, refreshFiles } = get()
+        console.log('changing node access to file', path, perm);
+        if (!api) return alert('No API');
+        if (!path) return alert('No file name');
+        if (perm && perm.allow !== undefined) {
+          if (!window.confirm(`Are you sure you want to ${perm.allow ? 'allow' : 'forbid'} ${perm.node} to access ${path}?`)) return;
+        } else if (perm && perm.node) {
+          if (!window.confirm('Are you sure you want to remove this permission?')) return;
+        } else {
+          if (!window.confirm(`Are you sure you want to remove all permissions for ${path}?`)) return;
+        }
+
+        api.send({ data: { ChangePermissions: { path, perm } } })
 
         setTimeout(() => refreshFiles(), 1000);
       },

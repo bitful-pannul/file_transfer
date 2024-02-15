@@ -6,7 +6,11 @@ export const trimPathToRootDir = (filename: string) => {
     return filename.split('/').slice(0, 2).join('/');
 }
 
-export const trimPathToFolder = (filename: string) => {
+export const trimPathToParentFolder = (filename: string) => {
     return filename.split('/').slice(0, -1).join('/');
+}
+
+export const trimBasePathFromPath = (filename: string) => {
+    return filename.split('/files/').pop() || filename
 }
 

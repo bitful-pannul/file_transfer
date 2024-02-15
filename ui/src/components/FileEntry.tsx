@@ -4,7 +4,7 @@ import useFileTransferStore from "../store/fileTransferStore";
 import classNames from "classnames";
 import { trimPathToFilename } from "../utils/file";
 import { FileIcon } from "./FileIcon";
-import { FaFolderPlus, FaPlus, FaX } from "react-icons/fa6";
+import { FaFolderPlus, FaLockOpen, FaPlus, FaX } from "react-icons/fa6";
 
 interface Props {
     file: KinoFile
@@ -12,7 +12,7 @@ interface Props {
     isOurFile: boolean
 }
 function FileEntry({ file, node, isOurFile }: Props) {
-    const { filesInProgress, api, refreshFiles, onAddFolder } = useFileTransferStore();
+    const { filesInProgress, api, refreshFiles, onAddFolder, setEditingPermissionsForPath, setPermissionsModalOpen } = useFileTransferStore();
     const [actualFilename, setActualFilename] = useState<string>('')
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
@@ -91,6 +91,11 @@ function FileEntry({ file, node, isOurFile }: Props) {
         })
     };
 
+    const onEditPermissions = () => {
+        setEditingPermissionsForPath(file.name)
+        setPermissionsModalOpen(true)
+    }
+
     return (
     <div 
         className={classNames('flex flex-col pl-2 py-1 max-w-[40vw] self-stretch grow', { 'bg-white/10 rounded': !file.dir })}
@@ -105,10 +110,10 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     {`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`}
                 </span>}
             </span>
-            <span className="text-xs ml-1">{actualFileSize}</span>
+            <span className="text-xs mx-1">{actualFileSize}</span>
             {showDownload && <button 
                 disabled={isOurFile || downloadInProgress || downloadComplete}
-                className={classNames('font-bold py-1 px-2 rounded ml-2', {
+                className={classNames('font-bold py-1 px-2 rounded mx-2', {
                 isOurFile, downloadInProgress, downloadComplete, 
                 'bg-gray-800': isOurFile || downloadInProgress || downloadComplete, 
                 'bg-blue-500 hover:bg-blue-700': !isOurFile && !downloadInProgress && !downloadComplete, })}
@@ -122,18 +127,26 @@ function FileEntry({ file, node, isOurFile }: Props) {
                             ? <span>{downloadInfo?.[1] || 0}%</span>
                             : 'Save to node'}
             </button>}
-            {isDirectory && isOurFile && !isCreatingFolder && <button
-                className={classNames('bg-gray-500/50 hover:bg-gray-700/50 font-bold py-1 px-2 rounded', { 'invisible': !showButtons })}
-                onClick={() => isOurFile && setIsCreatingFolder(!isCreatingFolder)}
+            {isOurFile && !isCreatingFolder && <>
+                {isDirectory && <button
+                    className={classNames('bg-gray-500/50 hover:bg-white/50 font-bold py-1 px-2 rounded', { 'invisible': !showButtons })}
+                    onClick={() => isOurFile && setIsCreatingFolder(!isCreatingFolder)}
                 >
-                <FaFolderPlus />
-            </button>}
-            {isOurFile && !isCreatingFolder && <button
-                className={classNames('bg-gray-500/50 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mx-2', { 'invisible': !showButtons })}
-                onClick={onDelete}
+                    <FaFolderPlus />
+                </button>}
+                <button
+                    className={classNames('bg-gray-500/50 hover:bg-white/50 text-white py-1 px-2 rounded mx-1', { 'invisible': !showButtons })}
+                    onClick={onEditPermissions}
                 >
-                <FaX />
-            </button>}
+                    <FaLockOpen />
+                </button>
+                <button
+                    className={classNames('bg-gray-500/50 hover:bg-red-700 text-white py-1 px-2 rounded mx-1', { 'invisible': !showButtons })}
+                    onClick={onDelete}
+                >
+                    <FaX />
+                </button>
+            </>}
         </div>
         {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-1'>
             <span className='text-xs mx-auto mb-1'>Create a new folder in {actualFilename}:</span>

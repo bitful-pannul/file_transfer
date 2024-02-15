@@ -17,11 +17,15 @@ interface Props {
 }
 
 const MyFiles = ({ files, node }: Props) => {    
-    const { onAddFolder, onMoveFile, refreshFiles, errors, clearErrors } = useFileTransferStore();
+    const { onAddFolder, onMoveFile, refreshFiles, errors, setErrors, clearErrors } = useFileTransferStore();
     const [createdFolderName, setCreatedFolderName] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
     const [treeData, setTreeData] = useState<TreeItem[]>([])
     const [expandedFiles, setExpandedFiles] = useState<{ [path: string]: boolean }>({})
+
+    const clearError = (index: number) => {
+        setErrors(errors.filter((_, i) => i !== index))
+    }
 
     const onFolderAdded = () => {
         onAddFolder('', createdFolderName, () => {
@@ -69,6 +73,7 @@ const MyFiles = ({ files, node }: Props) => {
 
     const expand = (expanded: boolean) => {
         setTreeData(toggleExpandedForAll({ treeData, expanded }))
+        setExpandedFiles((prev) => ({ ...prev, ...treeData.reduce((acc, node) => ({ ...acc, [node.file.name]: expanded }), {}) }))
     }
     
     return (
@@ -139,11 +144,17 @@ const MyFiles = ({ files, node }: Props) => {
                     <span className='flex-grow'>{error}</span>
                     <button 
                         className='bg-white/10 hover:bg-white/20 py-1 px-1 rounded ml-2'
-                        onClick={clearErrors}
+                        onClick={() => clearError(i)}
                     >
                         <FaX />
                     </button>
                 </span>)}
+                {errors.length > 1 && <button 
+                        className='bg-white/10 hover:bg-white/20 py-1 px-1 rounded ml-2'
+                        onClick={clearErrors}
+                    >
+                    Clear All
+                </button>}
             </div>
         </div>
     );
