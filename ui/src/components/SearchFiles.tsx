@@ -105,12 +105,12 @@ const SearchFiles = function() {
                 <button className='rounded px-2 py-1 ml-4 bg-white/10 text-sm'
                     onClick={() => expand(true)}
                 >
-                        Expand All
+                    Expand All
                 </button>
                 <button className='rounded px-2 py-1 ml-4 bg-white/10 text-sm'
                     onClick={() => expand(false)}
                 >
-                        Collapse All
+                    Collapse All
                 </button>
             </h2>}
             {!searching && foundFiles && foundFiles.length === 0 && <span className='text-white'>No files found.</span>}
