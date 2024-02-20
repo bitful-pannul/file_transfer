@@ -27,10 +27,13 @@ export const PermissionsModal: React.FC = () => {
     title={`Permissions`} 
     onClose={() => setPermissionsModalOpen(false)} 
   >
-    {(fileHasExplicitAllowances || fileHasMixedPermissions) && <div className="flex flex-col mt-4">
+    {(fileHasExplicitAllowances || fileHasMixedPermissions) && <div className="flex flex-col mt-4 px-2 py-1 rounded bg-green-500/10">
       <h2 className="font-bold">Allowed Nodes</h2>
       <div className="flex flex-col ml-2">
-        {filePermissions && Object.entries(filePermissions).filter(([_, perm]) => perm).map(([node, _]) => <div className="flex place-items-center">
+        {filePermissions && Object.entries(filePermissions).filter(([_, perm]) => perm).map(([node, _], i) => <div 
+            className="flex place-items-center"
+            key={i}
+          >
           <code>{node}</code>
           <button 
             className="ml-2"
@@ -41,10 +44,13 @@ export const PermissionsModal: React.FC = () => {
         </div>)}
       </div>
     </div>}
-    {(fileHasExplicitForbiddances || fileHasMixedPermissions) && <div className="flex flex-col mt-4">
+    {(fileHasExplicitForbiddances || fileHasMixedPermissions) && <div className="flex flex-col mt-4 px-2 py-1 rounded bg-red-500/10">
       <h2 className="font-bold">Forbidden Nodes</h2>
       <div className="flex flex-col ml-2">
-        {filePermissions && Object.entries(filePermissions).filter(([_, perm]) => !perm).map(([node, _]) =><div className="flex place-items-center">
+        {filePermissions && Object.entries(filePermissions).filter(([_, perm]) => !perm).map(([node, _], i) => <div 
+            className="flex place-items-center"
+            key={i}
+          >
           <code>{node}</code>
           <button 
             className="ml-2"

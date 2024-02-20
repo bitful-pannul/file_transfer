@@ -131,12 +131,6 @@ fn handle_kinofiles_request(
                 .send()?;
         }
         KinoRequest::Download { name, target } => {
-            // check if source has permission to see the file. if so, they may also download it
-            let files_available_to_node = ls_files(source, our, files_dir)?;
-            if !files_available_to_node.iter().any(|file| file.name == name) {
-                return Ok(());
-            }
-
             // spin up a worker, initialize based on whether it's a downloader or a sender.
             let our_worker = spawn(
                 None,
@@ -174,6 +168,16 @@ fn handle_kinofiles_request(
                 }
                 false => {
                     // they want to download a file
+
+                    // check if source has permission to see the file. if so, they may also download it
+                    let files_available_to_node = ls_files(source, our, files_dir)?;
+                    let name_plus_prefix = format!("kino_files:gloriainexcelsisdeo.os/files/{}", &name)
+                        .replace("//", "/");
+                    if !files_available_to_node.iter().any(|file| file.name == name_plus_prefix) {
+                        println!("kino_files: {} does not have permission to download {}", source.node, name);
+                        return Ok(());
+                    }
+
                     Request::new()
                         .body(serde_json::to_vec(&WorkerRequest::Initialize {
                             name: name.clone(),
@@ -269,9 +273,13 @@ fn handle_kinofiles_request(
                     }
                 },
             }
+            if !state.known_nodes.contains(&source.node) {
+                state.known_nodes.push(source.node.clone());
+            }
             // println!("kino_files: new perms: {:?}", state);
             set_state(&serde_json::to_vec(&state)?);
             push_state_via_ws(channel_id);
+            push_file_update_via_ws(channel_id);
         }
     }
 
@@ -468,7 +476,7 @@ fn handle_kinofiles_response(source: &Address, body: &Vec<u8>, is_http: bool) ->
 
     match kino_res {
         KinoResponse::ListFiles(files) => {
-            println!("kino_files: got files from node: {:?} ,files: {:?}", source, files);
+            // println!("kino_files: got files from node: {:?} ,files: {:?}", source, files);
 
             if is_http {
                 let mut headers = HashMap::new();

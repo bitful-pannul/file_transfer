@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import KinoFile from "../types/KinoFile";
 import useFileTransferStore from "../store/fileTransferStore";
 import classNames from "classnames";
-import { trimPathToFilename } from "../utils/file";
+import { trimBasePathFromPath, trimPathToFilename } from "../utils/file";
 import { FileIcon } from "./FileIcon";
-import { FaFolderPlus, FaLockOpen, FaPlus, FaX } from "react-icons/fa6";
+import { FaFolderPlus, FaLock, FaLockOpen, FaPlus, FaX } from "react-icons/fa6";
 
 interface Props {
     file: KinoFile
@@ -12,7 +12,7 @@ interface Props {
     isOurFile: boolean
 }
 function FileEntry({ file, node, isOurFile }: Props) {
-    const { filesInProgress, api, refreshFiles, onAddFolder, setEditingPermissionsForPath, setPermissionsModalOpen } = useFileTransferStore();
+    const { filesInProgress, api, refreshFiles, onAddFolder, setEditingPermissionsForPath, setPermissionsModalOpen, permissions } = useFileTransferStore();
     const [actualFilename, setActualFilename] = useState<string>('')
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
@@ -96,6 +96,10 @@ function FileEntry({ file, node, isOurFile }: Props) {
         setPermissionsModalOpen(true)
     }
 
+    const fileHasSpecialPermissions = permissions 
+        && permissions[trimBasePathFromPath(file.name)] 
+        && Object.keys(permissions[trimBasePathFromPath(file.name)]).length > 0;
+
     return (
     <div 
         className={classNames('flex flex-col pl-2 py-1 max-w-[40vw] self-stretch grow', { 'bg-white/10 rounded': !file.dir })}
@@ -135,10 +139,10 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     <FaFolderPlus />
                 </button>}
                 <button
-                    className={classNames('bg-gray-500/50 hover:bg-white/50 text-white py-1 px-2 rounded mx-1', { 'invisible': !showButtons })}
+                    className={classNames('bg-gray-500/50 hover:bg-white/50 text-white py-1 px-2 rounded mx-1', { 'invisible': !showButtons && !fileHasSpecialPermissions })}
                     onClick={onEditPermissions}
                 >
-                    <FaLockOpen />
+                    {fileHasSpecialPermissions ? <FaLock /> :  <FaLockOpen />}
                 </button>
                 <button
                     className={classNames('bg-gray-500/50 hover:bg-red-700 text-white py-1 px-2 rounded mx-1', { 'invisible': !showButtons })}
