@@ -149,7 +149,7 @@ fn handle_kinofiles_request(
             match source.node == our.node {
                 true => {
                     // we want to download a file
-                    let local_name = name.split("/files/").last().unwrap_or(&name);
+                    let local_name = name.split("/").last().unwrap_or(&name);
                     let _resp = Request::new()
                         .body(serde_json::to_vec(&WorkerRequest::Initialize {
                             name: local_name.to_string(),
@@ -173,7 +173,7 @@ fn handle_kinofiles_request(
 
                     // check if source has permission to see the file. if so, they may also download it
                     let files_available_to_node = ls_files(source, our, files_dir)?;
-                    // println!("files available to node: {:?}", files_available_to_node);
+                    println!("files available to node: {:?}", files_available_to_node);
                     if !files_available_to_node.iter().any(|file| file.name == name) {
                         println!("kino_files: {} does not have permission to download {}", source.node, name);
                         return Ok(());
