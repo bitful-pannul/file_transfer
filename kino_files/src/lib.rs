@@ -90,6 +90,28 @@ fn ls_files(source: &Address, our: &Address, files_dir: &Directory) -> anyhow::R
     Ok(files)
 }
 
+fn flatten_files_list(files: Vec<FileInfo>) -> anyhow::Result<Vec<FileInfo>> {
+    // bear in mind a dir can have a dir and so on
+    let mut flat_list = Vec::new();
+    let mut stack = files.into_iter().collect::<Vec<_>>();
+
+    while let Some(file_info) = stack.pop() {
+        if let Some(dir) = file_info.dir {
+            for file in dir.into_iter().rev() {
+                stack.push(file);
+            }
+        } else {
+            flat_list.push(FileInfo {
+                name: file_info.name,
+                size: file_info.size,
+                dir: None,
+            });
+        }
+    }
+
+    Ok(flat_list)
+}
+
 fn node_has_perms_to_path(node: &String, path: &String) -> bool {
     let path = path.split("/files/").last().unwrap_or(path);
     let state = get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?)).unwrap_or(empty_state());
@@ -172,12 +194,14 @@ fn handle_kinofiles_request(
                     // they want to download a file
 
                     // check if source has permission to see the file. if so, they may also download it
-                    let files_available_to_node = ls_files(source, our, files_dir)?;
-                    println!("files available to node: {:?}", files_available_to_node);
+                    let files_available_to_node = flatten_files_list(ls_files(source, our, files_dir)?)?;
+                    // println!("checking perms for file: {}", name);
+
                     if !files_available_to_node.iter().any(|file| file.name == name) {
-                        println!("kino_files: {} does not have permission to download {}", source.node, name);
+                        println!("kino_files: file {} is not accessible to node {}", name, source.node);
                         return Ok(());
                     }
+                    
                     let local_name = name.split("/files/").last().unwrap_or(&name);
 
                     Request::new()
