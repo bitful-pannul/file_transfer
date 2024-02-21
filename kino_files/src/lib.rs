@@ -171,9 +171,8 @@ fn handle_kinofiles_request(
 
                     // check if source has permission to see the file. if so, they may also download it
                     let files_available_to_node = ls_files(source, our, files_dir)?;
-                    let name_plus_prefix = format!("kino_files:gloriainexcelsisdeo.os/files/{}", &name)
-                        .replace("//", "/");
-                    if !files_available_to_node.iter().any(|file| file.name == name_plus_prefix) {
+                    println!("files available to node: {:?}", files_available_to_node);
+                    if !files_available_to_node.iter().any(|file| file.name == name) {
                         println!("kino_files: {} does not have permission to download {}", source.node, name);
                         return Ok(());
                     }

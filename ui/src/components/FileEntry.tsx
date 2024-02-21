@@ -53,7 +53,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
         api.send({
             data: {
                 Download: {
-                    name: actualFilename,
+                    name: file.name,
                     target: `${node}@${window.our.process}`
                 }
             }
@@ -114,7 +114,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     {`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`}
                 </span>}
             </span>
-            <span className="text-xs mx-1">{actualFileSize}</span>
+            <span className="text-xs mx-1">{actualFileSize || '0 KB'}</span>
             {showDownload && <button 
                 disabled={isOurFile || downloadInProgress || downloadComplete}
                 className={classNames('font-bold py-1 px-2 rounded mx-2', {
