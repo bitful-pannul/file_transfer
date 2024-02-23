@@ -1,4 +1,4 @@
-import {  FaBook, FaBookBookmark, FaBoxArchive, FaCode, FaFile, FaFilePdf, FaFileZipper, FaFilm, FaFolder, FaImage, FaJs, FaMusic } from "react-icons/fa6";
+import {  FaBookBookmark, FaBoxArchive, FaCode, FaFile, FaFilePdf, FaFileZipper, FaFilm, FaFolder, FaImage, FaJs, FaMusic } from "react-icons/fa6";
 import KinoFile from "../types/KinoFile";
 
 export const FileIcon = (props: { file: KinoFile }) => {

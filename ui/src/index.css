@@ -590,10 +590,6 @@ button:hover {
   background-color: rgb(29 78 216 / var(--tw-bg-opacity));
 }
 
-.invisible {
-  visibility: hidden;
-}
-
 .fixed {
   position: fixed;
 }
@@ -856,11 +852,6 @@ button:hover {
   padding-right: 1rem;
 }
 
-.py-0 {
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
-
 .py-1 {
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
@@ -877,10 +868,6 @@ button:hover {
 
 .pl-2 {
   padding-left: 0.5rem;
-}
-
-.pr-2 {
-  padding-right: 0.5rem;
 }
 
 .pr-1 {
