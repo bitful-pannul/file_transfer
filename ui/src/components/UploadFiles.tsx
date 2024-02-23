@@ -3,9 +3,11 @@ import useFileTransferStore from "../store/fileTransferStore";
 import { FaX } from "react-icons/fa6";
 
 const UploadFiles = () => {
-  const [filesToUpload, setFilesToUpload] = useState<File[]>([])
-  const { refreshFiles } = useFileTransferStore();
+  const { errors, setErrors, refreshFiles } = useFileTransferStore();
 
+  const [filesToUpload, setFilesToUpload] = useState<File[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  
   const onAddFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setFilesToUpload(Array.from(event.target.files))
@@ -17,6 +19,7 @@ const UploadFiles = () => {
     filesToUpload.forEach((file) => {
       formData.append('files', file)
     })
+    setIsUploading(true)
 
     fetch(`${import.meta.env.BASE_URL}/files`, {
       method: 'POST',
@@ -26,8 +29,11 @@ const UploadFiles = () => {
         refreshFiles()
         setFilesToUpload([])
       })
-      .catch((err) => {
-        alert(err)
+      .catch((_err: any) => {
+        setErrors([...errors, "There was an error uploading files."])
+      })
+      .finally(() => {
+        setIsUploading(false)
       })
   }
 
@@ -37,7 +43,7 @@ const UploadFiles = () => {
   }
 
   return (
-    <div className='flex place-content-center place-items-center px-2 py-1'>
+    <div className='flex place-content-center place-items-center px-2 py-1 relative'>
       <h3 className='text-xl font-bold px-2 py-1'>Upload</h3>
       <div className='flex flex-col px-2 py-1'>
         {filesToUpload.length === 0 && <label htmlFor='files' className="button">
@@ -69,6 +75,9 @@ const UploadFiles = () => {
           </div>
         )}
       </div>
+      {isUploading && <div className="absolute top-0 bottom-0 left-0 right-0 bg-black/30 flex place-items-center place-content-center">
+        <span className="text-white">Uploading...</span>
+      </div>}
     </div>
   )
 }

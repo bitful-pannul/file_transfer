@@ -594,8 +594,24 @@ button:hover {
   position: fixed;
 }
 
+.absolute {
+  position: absolute;
+}
+
+.relative {
+  position: relative;
+}
+
+.bottom-0 {
+  bottom: 0px;
+}
+
 .left-0 {
   left: 0px;
+}
+
+.right-0 {
+  right: 0px;
 }
 
 .top-0 {
@@ -784,6 +800,10 @@ button:hover {
   background-color: rgb(0 0 0 / var(--tw-bg-opacity));
 }
 
+.bg-black\/30 {
+  background-color: rgb(0 0 0 / 0.3);
+}
+
 .bg-gray-500\/50 {
   background-color: rgb(107 114 128 / 0.5);
 }
@@ -896,10 +916,6 @@ button:hover {
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
-}
-
-.\!font-normal {
-  font-weight: 400 !important;
 }
 
 .font-bold {
