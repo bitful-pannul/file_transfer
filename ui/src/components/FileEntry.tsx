@@ -4,7 +4,7 @@ import useFileTransferStore from "../store/fileTransferStore";
 import classNames from "classnames";
 import { trimBasePathFromPath, trimPathToFilename } from "../utils/file";
 import { FileIcon } from "./FileIcon";
-import { FaFolderPlus, FaLock, FaLockOpen, FaPlus, FaX } from "react-icons/fa6";
+import { FaDownload, FaFolderPlus, FaLock, FaLockOpen, FaPlus, FaTrash, FaX } from "react-icons/fa6";
 
 interface Props {
     file: KinoFile
@@ -16,11 +16,11 @@ function FileEntry({ file, node, isOurFile }: Props) {
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
     const [createdFolderName, setCreatedFolderName] = useState<string>('')
-    const [downloading, setDownloading] = useState<boolean>(false)
+    const [savingToNode, setSavingToNode] = useState<boolean>(false)
     const [isDirectory, setIsDirectory] = useState<boolean>(false)
     const [showButtons, setShowButtons] = useState<boolean>(false)
 
-    const showDownload = node !== window.our.node && !isDirectory;
+    const showSaveToNode = node !== window.our.node && !isDirectory;
 
     useEffect(() => {
         const directory = !!file.dir
@@ -40,10 +40,10 @@ function FileEntry({ file, node, isOurFile }: Props) {
         setActualFileSize(fileSize);
     }, [file.size])
 
-    const onDownload = () => {
+    const onSaveToNode = () => {
         if (!file.name) return alert('No file name');
         if (!api) return alert('No api');
-        setDownloading(true);
+        setSavingToNode(true);
         api.send({
             data: {
                 Download: {
@@ -74,7 +74,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
     }
 
     const downloadInfo = Object.entries(filesInProgress).find(([key, _]) => file.name.match(key));
-    const downloadInProgress = downloading || (downloadInfo?.[1] || 100) < 100;
+    const downloadInProgress = savingToNode || (downloadInfo?.[1] || 100) < 100;
     const downloadComplete = (
         (downloadInfo?.[1] || 0) === 100 ||
         (files.find(f => trimPathToFilename(f.name) === trimPathToFilename(file.name)) !== undefined)
@@ -95,6 +95,20 @@ function FileEntry({ file, node, isOurFile }: Props) {
         setPermissionsModalOpen(true)
     }
 
+    const onDownload = () => {
+        fetch(`${import.meta.env.BASE_URL}/files?path=${file.name}`)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = trimPathToFilename(file.name);
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            })
+    }
+
     const fileHasSpecialPermissions = permissions 
         && permissions[trimBasePathFromPath(file.name)] 
         && Object.keys(permissions[trimBasePathFromPath(file.name)]).length > 0;
@@ -113,13 +127,13 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     {`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`}
                 </span>}
             </span>
-            <span className="text-xs mx-1">{actualFileSize || '0 KB'}</span>
-            {showDownload && <button 
+            {!isDirectory && <span className="text-xs mx-1">{actualFileSize || '0 KB'}</span>}
+            {showSaveToNode && <button 
                 disabled={isOurFile || downloadInProgress || downloadComplete}
-                className={classNames('font-bold py-1 px-2 rounded mx-2', {
+                className={classNames('bg-gray-500/50 font-normal px-2 py-1 ml-1 text-xs', {
                 isOurFile, downloadInProgress, downloadComplete, 
                 'bg-gray-800': isOurFile || downloadInProgress || downloadComplete })}
-                onClick={onDownload}
+                onClick={onSaveToNode}
             >
                 {isOurFile
                     ? 'Saved'
@@ -136,6 +150,12 @@ function FileEntry({ file, node, isOurFile }: Props) {
                 >
                     <FaFolderPlus />
                 </button>}
+                {!isDirectory && <button
+                    className={classNames("bg-gray-500/50 hover:bg-white/50 ml-1 py-1 px-2", { 'hidden': !showButtons })}
+                    onClick={onDownload}
+                >
+                    <FaDownload />
+                </button>}
                 <button
                     className={classNames('bg-gray-500/50 hover:bg-white/50 ml-1 py-1 px-2', { 'hidden': !showButtons && !fileHasSpecialPermissions })}
                     onClick={onEditPermissions}
@@ -146,7 +166,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     className={classNames('bg-gray-500/50 hover:bg-red-700 ml-1 py-1 px-2', { 'hidden': !showButtons })}
                     onClick={onDelete}
                 >
-                    <FaX />
+                    <FaTrash />
                 </button>
             </>}
         </div>

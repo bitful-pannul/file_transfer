@@ -35,6 +35,9 @@ export interface FileTransferStore {
 type WsMessage =
   | { kind: 'progress', data: { name: string, progress: number } }
   | { kind: 'uploaded', data: { name: string, size: number } }
+  | { kind: 'file_update', data: { path: string } }
+  | { kind: 'state', data: { known_nodes: string[], permissions: Permissions } }
+  | { kind: 'error', data: string }
 
 const useFileTransferStore = create<FileTransferStore>()(
   persist(

@@ -39,17 +39,17 @@ pub enum KinoRequest {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum KinoResponse {
-    ListFiles(Vec<FileInfo>),
+    ListFiles(Vec<KinoFileInfo>),
     Download { name: String, worker: Address },
     Done,
     Started,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct FileInfo {
+pub struct KinoFileInfo {
     pub name: String,
     pub size: u64,
-    pub dir: Option<Vec<FileInfo>>,
+    pub dir: Option<Vec<KinoFileInfo>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -60,9 +60,9 @@ pub enum WorkerRequest {
     },
 }
 
-fn ls_files(source: &Address, our: &Address, files_dir: &Directory) -> anyhow::Result<Vec<FileInfo>> {
+fn ls_files(source: &Address, our: &Address, files_dir: &Directory) -> anyhow::Result<Vec<KinoFileInfo>> {
     let entries = files_dir.read()?;
-    let files: Vec<FileInfo> = entries
+    let files: Vec<KinoFileInfo> = entries
         .iter()
         .filter_map(|file| {
             if source.node != our.node && !node_has_perms_to_path(&source.node, &file.path) {
@@ -70,14 +70,14 @@ fn ls_files(source: &Address, our: &Address, files_dir: &Directory) -> anyhow::R
             }
             match file.file_type {
                 FileType::File => match metadata(&file.path) {
-                    Ok(metadata) => Some(FileInfo {
+                    Ok(metadata) => Some(KinoFileInfo {
                         name: file.path.clone(),
                         size: metadata.len,
                         dir: None,
                     }),
                     Err(_) => None,
                 },
-                FileType::Directory => Some(FileInfo {
+                FileType::Directory => Some(KinoFileInfo {
                     name: file.path.clone(),
                     size: 0,
                     dir: Some(ls_files(source, our, &open_dir(&file.path, false).unwrap()).unwrap()),
@@ -90,7 +90,7 @@ fn ls_files(source: &Address, our: &Address, files_dir: &Directory) -> anyhow::R
     Ok(files)
 }
 
-fn flatten_files_list(files: Vec<FileInfo>) -> anyhow::Result<Vec<FileInfo>> {
+fn flatten_files_list(files: Vec<KinoFileInfo>) -> anyhow::Result<Vec<KinoFileInfo>> {
     // bear in mind a dir can have a dir and so on
     let mut flat_list = Vec::new();
     let mut stack = files.into_iter().collect::<Vec<_>>();
@@ -101,7 +101,7 @@ fn flatten_files_list(files: Vec<FileInfo>) -> anyhow::Result<Vec<FileInfo>> {
                 stack.push(file);
             }
         } else {
-            flat_list.push(FileInfo {
+            flat_list.push(KinoFileInfo {
                 name: file_info.name,
                 size: file_info.size,
                 dir: None,
@@ -132,6 +132,18 @@ fn node_has_perms_to_path(node: &String, path: &String) -> bool {
     }
 }
 
+fn node_can_download_path(source: &Address, our: &Address, files_dir: &Directory, path: &String) -> anyhow::Result<bool> {
+    // check if source has permission to see the file. if so, they may also download it
+    let files_available_to_node = flatten_files_list(ls_files(source, our, files_dir)?)?;
+    // println!("checking perms for file: {}", name);
+
+    if !files_available_to_node.iter().any(|file| file.name == *path) {
+        println!("kino_files: file {} is not accessible to node {}", path, source.node);
+        return Ok(false);
+    }
+    Ok(true)
+}
+
 fn handle_kinofiles_request(
     our: &Address,
     source: &Address,
@@ -152,7 +164,7 @@ fn handle_kinofiles_request(
                 .body(serde_json::to_vec(&KinoResponse::ListFiles(files))?)
                 .send()?;
         }
-        KinoRequest::Download { name, target } => {
+        KinoRequest::Download { name: path, target } => {
             // spin up a worker, initialize based on whether it's a downloader or a sender.
             let our_worker = spawn(
                 None,
@@ -170,8 +182,8 @@ fn handle_kinofiles_request(
 
             match source.node == our.node {
                 true => {
-                    // we want to download a file
-                    let local_name = name.split("/").last().unwrap_or(&name);
+                    // we want to save a file to our node
+                    let local_name = path.split("/").last().unwrap_or(&path);
                     let _resp = Request::new()
                         .body(serde_json::to_vec(&WorkerRequest::Initialize {
                             name: local_name.to_string(),
@@ -184,25 +196,19 @@ fn handle_kinofiles_request(
                     // send our initialized worker address to the other node
                     Request::new()
                         .body(serde_json::to_vec(&KinoRequest::Download {
-                            name: name.to_string(),
+                            name: path.to_string(),
                             target: our_worker_address,
                         })?)
                         .target(&target)
                         .send()?;
                 }
                 false => {
-                    // they want to download a file
-
-                    // check if source has permission to see the file. if so, they may also download it
-                    let files_available_to_node = flatten_files_list(ls_files(source, our, files_dir)?)?;
-                    // println!("checking perms for file: {}", name);
-
-                    if !files_available_to_node.iter().any(|file| file.name == name) {
-                        println!("kino_files: file {} is not accessible to node {}", name, source.node);
-                        return Ok(());
+                    // they want to save a file to their node
+                    if let Ok(false) = node_can_download_path(source, our, files_dir, &path) {
+                        return Ok(())
                     }
                     
-                    let local_name = name.split("/files/").last().unwrap_or(&name);
+                    let local_name = path.split("/files/").last().unwrap_or(&path);
 
                     Request::new()
                         .body(serde_json::to_vec(&WorkerRequest::Initialize {
@@ -325,7 +331,7 @@ fn handle_http_request(
         HttpServerRequest::Http(request) => {
             match request.method()?.as_str() {
                 "GET" => {
-                    // /?node=akira.os
+                    // files?node=someoneelse.os -> get their files list
                     if let Some(remote_node) = request.query_params().get("node") {
                         let remote_node = Address {
                             node: remote_node.clone(),
@@ -340,22 +346,43 @@ fn handle_http_request(
                             state.known_nodes.push(remote_node.node.clone());
                             set_state(&serde_json::to_vec(&state)?);
                         }
-                       
+                    
                         let resp = Request::new()
                             .body(serde_json::to_vec(&KinoRequest::ListFiles)?)
                             .target(&remote_node)
                             .send_and_await_response(5)??;
 
                         handle_kinofiles_response(source, &resp.body().to_vec(), true)?;
+                    } else if let Some(path) = request.query_params().get("path") {
+                        // files?path=path/to/file -> send file contents to browser
+                        
+                        // you can only download your own files 
+                        if source.node != our.node {
+                            send_response(StatusCode::FORBIDDEN, None, vec![]);
+                            return Ok(());
+                        }
+                        
+                        if let Ok(file) = open_file(&path, false) {
+                            let mut headers = HashMap::new();
+                            headers.insert("Content-Type".to_string(), "application/octet-stream".to_string());
+                            if let Ok(contents) = file.read() {
+                                send_response(StatusCode::OK, Some(headers), contents);
+                            } else {
+                                send_response(StatusCode::INTERNAL_SERVER_ERROR, None, vec![]);
+                            }
+                        } else {
+                            send_response(StatusCode::NOT_FOUND, None, vec![]);
+                        }
+                    } else {
+                        // files -> list our files
+                        let files = ls_files(source, our, files_dir)?;
+                        let mut headers = HashMap::new();
+                        headers.insert("Content-Type".to_string(), "application/json".to_string());
+
+                        let body = serde_json::to_vec(&KinoResponse::ListFiles(files))?;
+
+                        send_response(StatusCode::OK, Some(headers), body);
                     }
-
-                    let files = ls_files(source, our, files_dir)?;
-                    let mut headers = HashMap::new();
-                    headers.insert("Content-Type".to_string(), "application/json".to_string());
-
-                    let body = serde_json::to_vec(&KinoResponse::ListFiles(files))?;
-
-                    send_response(StatusCode::OK, Some(headers), body);
                 }
                 "POST" => {
                     if source.node != our.node {
@@ -494,7 +521,7 @@ fn push_error_via_ws(channel_id: &mut u32, error: String) {
     )
 }
 
-fn handle_kinofiles_response(source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
+fn handle_kinofiles_response(_source: &Address, body: &Vec<u8>, is_http: bool) -> anyhow::Result<()> {
     let Ok(kino_res) = serde_json::from_slice::<KinoResponse>(body) else {
         // println!("kino_files: error: failed to parse response: {}", String::from_utf8_lossy(&body));
         return Ok(());
