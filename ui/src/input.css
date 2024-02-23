@@ -36,4 +36,17 @@
   h1, h2, h3, h4, h5, h6 {
     @apply heading;
   }
+
+  .button {
+    @apply bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded cursor-pointer text-center
+  }
+
+  button {
+    @apply button;
+  }
+}
+
+.rstcustom__expandButton, .rstcustom__collapseButton {
+  z-index: 1 !important;
+  left: 16px !important;
 }

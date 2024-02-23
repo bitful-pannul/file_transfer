@@ -145,7 +145,7 @@ const useFileTransferStore = create<FileTransferStore>()(
         setTimeout(() => refreshFiles(), 1000);
       },
       refreshFiles: () => {
-        const { setFiles } = get()
+        const { setFiles, setErrors, errors } = get()
         console.log('refreshing files')
         fetch(`${import.meta.env.BASE_URL}/files`)
           .then((response) => response.json())
@@ -155,6 +155,9 @@ const useFileTransferStore = create<FileTransferStore>()(
             } catch {
               console.log("Failed to parse JSON files", data);
             }
+          })
+          .catch(() => {
+            setErrors([...errors, 'Failed to fetch files. Please check your connection.'])
           })
       },
       set,

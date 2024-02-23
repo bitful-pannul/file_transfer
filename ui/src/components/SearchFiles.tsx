@@ -78,7 +78,6 @@ const SearchFiles = function() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     <button
-                        className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
                         onClick={handleSearch}
                         disabled={searching}
                     >
@@ -89,10 +88,11 @@ const SearchFiles = function() {
                     <span className='mx-2'>or:</span>
                     <select
                         className='bg-gray-800 appearance-none border-2 border-gray-800 rounded w-full py-2 px-4 text-white leading-tight focus:outline-none focus:bg-gray-800 focus:border-blue-500'
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {setSearchTerm(e.target.value)}}
+                        disabled={searching}
                     >
                         <option value=''>Select a known node</option>
-                        {knownNodes.map((node) => (
+                        {knownNodes.filter(n => n !== our.node).map((node) => (
                             <option key={node} value={node}>{node}</option>
                         ))}
                     </select>

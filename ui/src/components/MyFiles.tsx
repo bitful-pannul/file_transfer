@@ -110,13 +110,13 @@ const MyFiles = ({ files, node }: Props) => {
                         onChange={(e) => setCreatedFolderName(e.target.value)}
                     />
                     <button
-                        className='bg-blue-500 hover:bg-blue-700 font-bold py-1 px-2 rounded ml-2 text-xs'
+                        className='py-1 px-2 ml-2'
                         onClick={onFolderAdded}
                     >
                         <FaFolderPlus />
                     </button>
                     <button
-                        className='bg-gray-800 hover:bg-red-700 text-white font-bold py-0 px-1 rounded ml-2'
+                        className='bg-gray-800 hover:bg-red-700 py-1 px-2 ml-2'
                         onClick={() => setIsCreatingFolder(false)}
                     >
                         <FaX />

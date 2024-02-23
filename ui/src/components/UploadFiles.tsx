@@ -40,7 +40,7 @@ const UploadFiles = () => {
     <div className='flex place-content-center place-items-center px-2 py-1'>
       <h3 className='text-xl font-bold px-2 py-1'>Upload</h3>
       <div className='flex flex-col px-2 py-1'>
-        {filesToUpload.length === 0 && <label htmlFor='files' className='bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded cursor-pointer text-center'>
+        {filesToUpload.length === 0 && <label htmlFor='files' className="button">
           Choose Files
           <input id='files' type='file' hidden multiple onChange={onAddFiles} />
         </label>}
@@ -62,7 +62,7 @@ const UploadFiles = () => {
               <button className='bg-white/10 grow hover:bg-red-500 font-bold py-2 px-4 rounded' onClick={() => setFilesToUpload([])}>
                 Clear
               </button>
-              <button className='bg-blue-500 grow hover:bg-blue-700 font-bold py-2 px-4 rounded' onClick={onUploadFiles}>
+              <button className='grow' onClick={onUploadFiles}>
                 Upload
               </button>
             </div>

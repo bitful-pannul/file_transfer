@@ -12,8 +12,7 @@ interface Props {
     isOurFile: boolean
 }
 function FileEntry({ file, node, isOurFile }: Props) {
-    const { filesInProgress, api, refreshFiles, onAddFolder, setEditingPermissionsForPath, setPermissionsModalOpen, permissions } = useFileTransferStore();
-    const [actualFilename, setActualFilename] = useState<string>('')
+    const { filesInProgress, files, api, refreshFiles, onAddFolder, setEditingPermissionsForPath, setPermissionsModalOpen, permissions } = useFileTransferStore();
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
     const [createdFolderName, setCreatedFolderName] = useState<string>('')
@@ -22,11 +21,6 @@ function FileEntry({ file, node, isOurFile }: Props) {
     const [showButtons, setShowButtons] = useState<boolean>(false)
 
     const showDownload = node !== window.our.node && !isDirectory;
-
-    useEffect(() => {
-        const filename = trimPathToFilename(file.name);
-        setActualFilename(filename);
-    }, [file.name])
 
     useEffect(() => {
         const directory = !!file.dir
@@ -62,8 +56,9 @@ function FileEntry({ file, node, isOurFile }: Props) {
 
     const onDelete = () => {
         if (!api) return alert('No api');
-        if (!actualFilename) return alert('No filename');
-        if (!window.confirm(`Are you sure you want to delete ${actualFilename}?`)) return;
+        if (!file.name || !trimPathToFilename(file.name)) return alert('No filename');
+        if (isDirectory && file.dir && file.dir?.length > 0) return alert('Cannot delete a directory with files in it.');
+        if (!window.confirm(`Are you sure you want to delete ${trimPathToFilename(file.name)}?`)) return;
 
         api.send({
             data: {
@@ -80,10 +75,14 @@ function FileEntry({ file, node, isOurFile }: Props) {
 
     const downloadInfo = Object.entries(filesInProgress).find(([key, _]) => file.name.match(key));
     const downloadInProgress = downloading || (downloadInfo?.[1] || 100) < 100;
-    const downloadComplete = (downloadInfo?.[1] || 0) === 100;
+    const downloadComplete = (
+        (downloadInfo?.[1] || 0) === 100 ||
+        (files.find(f => trimPathToFilename(f.name) === trimPathToFilename(file.name)) !== undefined)
+    );
     const onFolderAdded = () => {
-        onAddFolder(actualFilename, createdFolderName, () => {
+        onAddFolder(trimBasePathFromPath(file.name), createdFolderName, () => {
             setIsCreatingFolder(false);
+            setCreatedFolderName('')
 
             setTimeout(() => {
                 refreshFiles();
@@ -106,10 +105,10 @@ function FileEntry({ file, node, isOurFile }: Props) {
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
     >
-        <div className='flex flex-row justify-between place-items-center'>
+        <div className='flex flex-row justify-between place-items-center pr-1'>
             <span className='flex whitespace-pre-wrap grow mr-1'>
                 <FileIcon file={file} />
-                {actualFilename}
+                {trimPathToFilename(file.name)}
                 {file.dir && <span className='text-white text-xs px-2 py-1'>
                     {`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`}
                 </span>}
@@ -119,8 +118,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
                 disabled={isOurFile || downloadInProgress || downloadComplete}
                 className={classNames('font-bold py-1 px-2 rounded mx-2', {
                 isOurFile, downloadInProgress, downloadComplete, 
-                'bg-gray-800': isOurFile || downloadInProgress || downloadComplete, 
-                'bg-blue-500 hover:bg-blue-700': !isOurFile && !downloadInProgress && !downloadComplete, })}
+                'bg-gray-800': isOurFile || downloadInProgress || downloadComplete })}
                 onClick={onDownload}
             >
                 {isOurFile
@@ -133,19 +131,19 @@ function FileEntry({ file, node, isOurFile }: Props) {
             </button>}
             {isOurFile && !isCreatingFolder && <>
                 {isDirectory && <button
-                    className={classNames('bg-gray-500/50 hover:bg-white/50 font-bold py-1 px-2 rounded', { 'invisible': !showButtons })}
+                    className={classNames('bg-gray-500/50 hover:bg-white/50 ml-1 py-1 px-2', { 'hidden': !showButtons })}
                     onClick={() => isOurFile && setIsCreatingFolder(!isCreatingFolder)}
                 >
                     <FaFolderPlus />
                 </button>}
                 <button
-                    className={classNames('bg-gray-500/50 hover:bg-white/50 text-white py-1 px-2 rounded mx-1', { 'invisible': !showButtons && !fileHasSpecialPermissions })}
+                    className={classNames('bg-gray-500/50 hover:bg-white/50 ml-1 py-1 px-2', { 'hidden': !showButtons && !fileHasSpecialPermissions })}
                     onClick={onEditPermissions}
                 >
                     {fileHasSpecialPermissions ? <FaLock /> :  <FaLockOpen />}
                 </button>
                 <button
-                    className={classNames('bg-gray-500/50 hover:bg-red-700 text-white py-1 px-2 rounded mx-1', { 'invisible': !showButtons })}
+                    className={classNames('bg-gray-500/50 hover:bg-red-700 ml-1 py-1 px-2', { 'hidden': !showButtons })}
                     onClick={onDelete}
                 >
                     <FaX />
@@ -153,23 +151,24 @@ function FileEntry({ file, node, isOurFile }: Props) {
             </>}
         </div>
         {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-1'>
-            <span className='text-xs mx-auto mb-1'>Create a new folder in {actualFilename}:</span>
+            <span className='text-xs mx-auto mb-1'>Create a new folder in {trimPathToFilename(file.name)}:</span>
             <div className="flex flex-row">
                 <input
-                    className='bg-gray-800 appearance-none border-2 border-gray-800 rounded py-1 px-2 text-white leading-tight focus:outline-none focus:bg-gray-800 focus:border-blue-500'
+                    className='bg-gray-800 appearance-none border-2 border-gray-800 py-1 px-2 leading-tight focus:outline-none focus:bg-gray-800 focus:border-blue-500'
                     type="text"
                     value={createdFolderName}
                     placeholder='folder name'
                     onChange={(e) => setCreatedFolderName(e.target.value)}
+                    onKeyUp={(e) => e.key === 'Enter' && onFolderAdded()}
                 />
                 <button
-                    className='bg-blue-500 hover:bg-blue-700 font-bold py-1 px-2 rounded ml-2 text-xs'
+                    className='py-1 px-2 ml-2'
                     onClick={onFolderAdded}
                 >
                     <FaPlus />
                 </button>
                 <button
-                    className='bg-gray-800 hover:bg-red-700 text-white font-bold py-0 px-1 rounded ml-2'
+                    className='bg-gray-800 hover:bg-red-700 py-1 px-2 ml-2'
                     onClick={() => setIsCreatingFolder(false)}
                 >
                     <FaX />
