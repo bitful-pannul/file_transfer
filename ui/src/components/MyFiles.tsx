@@ -8,7 +8,7 @@ import FileExplorerTheme from '@nosferatu500/theme-file-explorer';
 import FileEntry from './FileEntry';
 import { TreeFile } from '../types/TreeFile';
 import { trimPathToRootDir } from '../utils/file';
-import { FaFolderPlus, FaX } from 'react-icons/fa6';
+import { FaChevronDown, FaChevronUp, FaFolderPlus, FaX } from 'react-icons/fa6';
 import classNames from 'classnames';
 
 interface Props {
@@ -78,52 +78,54 @@ const MyFiles = ({ files, node }: Props) => {
     
     return (
         <div className='flex flex-col grow self-stretch'>
-            <h3 className='px-2 py-1 flex place-items-center'>
-                <span className='font-mono font-bold'>{node}</span>
+            <h2 className='px-2 py-1 flex place-items-center'>
+                <span className='heading'>{node}</span>
                 {!isCreatingFolder && <button
-                    className='bg-gray-500/50 hover:bg-gray-700/50 py-1 px-2 rounded ml-2 self-stretch'
+                    className='icon ml-4'
                     onClick={() => setIsCreatingFolder(!isCreatingFolder)}
                 >
                     <FaFolderPlus />
                 </button>}
                 <button
                     onClick={() => expand(true)}
-                    className='bg-gray-500/50 hover:bg-gray-700/50 py-1 px-2 rounded ml-2 self-stretch'
+                    className='clear'
                 >
+                    <FaChevronDown className='mr-2' />
                     Expand All
                 </button>
                 <button
                     onClick={() => expand(false)}
-                    className='bg-gray-500/50 hover:bg-gray-700/50 py-1 px-2 rounded ml-2 self-stretch'
+                    className='clear'
                 >
+                    <FaChevronUp className='mr-2' />
                     Collapse All
                 </button>
-            </h3>
-            {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-1'>
-                <span className='text-xs mx-auto mb-1'>Create a new folder in /:</span>
-                <div className="flex flex-row">
+            </h2>
+            {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-2 rounded'>
+                <span className='mx-auto mb-1'>Create a new folder in /:</span>
+                <div className="flex">
                     <input
-                        className='bg-gray-800 appearance-none border-2 border-gray-800 rounded py-1 px-2 text-white leading-tight focus:outline-none focus:bg-gray-800 focus:border-blue-500'
+                        className='grow'
                         type="text"
                         value={createdFolderName}
                         placeholder='folder name'
                         onChange={(e) => setCreatedFolderName(e.target.value)}
                     />
                     <button
-                        className='py-1 px-2 ml-2'
+                        className='icon ml-2'
                         onClick={onFolderAdded}
                     >
                         <FaFolderPlus />
                     </button>
                     <button
-                        className='bg-gray-800 hover:bg-red-700 py-1 px-2 ml-2'
+                        className='icon ml-2'
                         onClick={() => setIsCreatingFolder(false)}
                     >
                         <FaX />
                     </button>
                 </div>
             </div>}
-            <div className='grow'>
+            <div className='grow h-[50vh] overflow-y-auto'>
                 {files.length === 0
                     ? <span className='text-white px-2 py-1'>No files... yet.</span>
                     : <SortableTree

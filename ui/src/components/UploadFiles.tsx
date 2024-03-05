@@ -1,6 +1,7 @@
 import { useState } from "react";
 import useFileTransferStore from "../store/fileTransferStore";
 import { FaX } from "react-icons/fa6";
+import { getReadableFilesize } from "../utils/file";
 
 const UploadFiles = () => {
   const { errors, setErrors, refreshFiles } = useFileTransferStore();
@@ -44,7 +45,7 @@ const UploadFiles = () => {
 
   return (
     <div className='flex place-content-center place-items-center px-2 py-1 relative'>
-      <h3 className='text-xl font-bold px-2 py-1'>Upload</h3>
+      <h3 className='text-xl px-2 py-1'>Upload</h3>
       <div className='flex flex-col px-2 py-1'>
         {filesToUpload.length === 0 && <label htmlFor='files' className="button">
           Choose Files
@@ -53,22 +54,33 @@ const UploadFiles = () => {
 
         {filesToUpload.length > 0 && (
           <div className='flex flex-col px-2 py-1'>
-            <ul>
+            <ul className="flex flex-col items-start">
               {filesToUpload.map((file) => (
                 <li 
                   key={file.name}
-                  className="flex place-items-center bg-gray-800 hover:bg-gray-700/50 font-bold py-1 px-2 rounded cursor-pointer"
+                  className="flex mb-2 px-8 py-2 place-items-center rounded rounded-full hover:bg-white/20 bg-white/10 cursor-pointer"
                   onClick={() => onRemoveFileToUpload(file)}
-                >{file.name} <FaX className="ml-auto pl-1" /></li>
+                >
+                  <FaX className="text-xs" />
+                  <span className="pl-4">{file.name}</span>
+                </li>
               ))}
             </ul>
-            <span>{filesToUpload.length} files selected</span>
-            <span>Total: {filesToUpload.reduce((acc, file) => acc + file.size, 0)} bytes</span>
-            <div className="flex flex-row grow">
-              <button className='bg-white/10 grow hover:bg-red-500 font-bold py-2 px-4 rounded' onClick={() => setFilesToUpload([])}>
+            <div className="flex flex-col px-2 py-1 text-center mb-2">
+              <span>{filesToUpload.length} files selected</span>
+              <span>Total: {getReadableFilesize(filesToUpload.reduce((acc, file) => acc + file.size, 0))}</span>
+            </div>
+            <div className="flex self-center">
+              <button 
+                className='alt mr-2' 
+                onClick={() => setFilesToUpload([])}
+              >  
                 Clear
               </button>
-              <button className='grow' onClick={onUploadFiles}>
+              <button 
+                className="ml-2"
+                onClick={onUploadFiles}
+              >
                 Upload
               </button>
             </div>

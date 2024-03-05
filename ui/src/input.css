@@ -25,6 +25,8 @@
 @layer components {
   .heading {
     font-family: OpenSans;
+    letter-spacing: -0.01em;
+    @apply leading-6 m-0;
   }
 
   .display {
@@ -37,8 +39,28 @@
     @apply heading;
   }
 
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+
+  h4 {
+    @apply text-lg;
+  }
+
+  h6 {
+    @apply text-sm;
+  }
+
   .button {
-    @apply bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded cursor-pointer text-center
+    @apply flex m-0 py-2 px-6 rounded cursor-pointer place-content-center text-center rounded-lg heading;
   }
 
   button {
@@ -49,4 +71,124 @@
 .rstcustom__expandButton, .rstcustom__collapseButton {
   z-index: 1 !important;
   left: 16px !important;
+}
+
+.rstcustom__row {
+  flex-grow: 1;
+}
+
+.rstcustom__rowWrapper:hover {
+  @apply !opacity-100;
+}
+
+:root {
+  --text-light: #FFF5D9;
+  --text-dark: #22211F;
+  --text-orange: #FF7533;
+  --orange-light: #F36822;
+  --orange-medium: #F35422;
+  --orange-burnt: #E25F35;
+
+  --medium-gray: 7E7E7E;
+  --gray-button: #fdf5dc40;
+  --input-background: rgba(243, 84, 34, 0.25); /* orange-medium */
+}
+
+body {
+  background-color: var(--gray-button);
+  color: var(--text-light);
+  background: url('./assets/background.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
+input {
+  all: unset;
+}
+input[type="text"],
+input[type="password"],
+input[type="checkbox"] {
+  padding: 1em;
+  border: 1px solid var(--orange-medium);
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 1em;
+  background-color: var(--input-background);
+  color: var(--text-light);
+}
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+}
+input[type="checkbox"] {
+  padding: 0.25em 0.8em;
+  cursor: pointer;
+}
+input[type="checkbox"]:checked {
+  background-color: var(--orange-medium);
+}
+.checkmark {
+  position: absolute;
+  left: 4px;
+  font-size: 24px;
+  top: -5px;
+  cursor: pointer;
+}
+::placeholder {
+  color: var(--text-light) !important;
+}
+::-webkit-input-placeholder::placeholder {
+  color: var(--text-light) !important;
+}
+::-moz-placeholder::placeholder {
+  color: var(--text-light) !important;
+}
+::-ms-input-placeholder {
+  color: var(--text-light) !important;
+}
+
+button, [type='button'], [type='reset'], [type='submit'], .button {
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--orange-medium);
+  background: var(--orange-medium);
+  transition: all 0.1s;
+}
+
+button.alt {
+  @apply bg-white text-black border-white hover:bg-orange hover:text-white;
+}
+
+button.clear {
+  @apply bg-transparent border-transparent font-bold;
+  font-family: 'Barlow';
+}
+
+button.thin {
+  @apply !px-4 !py-2;
+}
+
+button.icon {
+  @apply flex items-center place-content-center bg-transparent w-14 p-4 text-[16px] rounded-full border-white/25;
+}
+
+button.icon.alt {
+  @apply border-black/25 hover:border-white/25
+}
+
+button:hover {
+  opacity: 0.9;
+  box-shadow: none;
+}
+
+button:disabled {
+  background-color: var(--medium-gray);
+  border: 1px solid var(--medium-gray);
+  box-shadow: 0 1px 2px var(--medium-gray);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.obox {
+  background-color: var(--input-background);
+  @apply rounded-lg p-4 m-4;
 }

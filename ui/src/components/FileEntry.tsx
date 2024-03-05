@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import KinoFile from "../types/KinoFile";
 import useFileTransferStore from "../store/fileTransferStore";
 import classNames from "classnames";
-import { trimBasePathFromPath, trimPathToFilename } from "../utils/file";
+import { getReadableFilesize, trimBasePathFromPath, trimPathToFilename } from "../utils/file";
 import { FileIcon } from "./FileIcon";
 import { FaDownload, FaFolderPlus, FaLock, FaLockOpen, FaPlus, FaTrash, FaX } from "react-icons/fa6";
 
@@ -28,15 +28,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
     }, [file])
 
     useEffect(() => {
-        const fileSize = file.size > 1000000000000
-            ? `${(file.size / 1000000000000).toFixed(2)} TB`
-            : file.size > 1000000000
-            ? `${(file.size / 1000000000).toFixed(2)} GB`
-            : file.size > 1000000
-            ? `${(file.size / 1000000).toFixed(2)} MB`
-            : file.size === 0
-            ? ''
-            : `${(file.size / 1000).toFixed(2)} KB`;
+        const fileSize = getReadableFilesize(file.size)
         setActualFileSize(fileSize);
     }, [file.size])
 
@@ -115,7 +107,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
 
     return (
     <div 
-        className={classNames('flex flex-col pl-2 py-1 max-w-[40vw] self-stretch grow', { 'bg-white/10 rounded': !file.dir })}
+        className={classNames('flex flex-col font-bold px-4 py-2 max-w-[40vw] self-stretch grow rounded-lg', { 'text-black bg-white hover:bg-orange hover:text-white': !file.dir })}
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
     >
@@ -127,7 +119,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     {`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`}
                 </span>}
             </span>
-            {!isDirectory && <span className="text-xs mx-1">{actualFileSize || '0 KB'}</span>}
+            {!isDirectory && <span className="ml-auto">{actualFileSize || '0 KB'}</span>}
             {showSaveToNode && <button 
                 disabled={isOurFile || downloadInProgress || downloadComplete}
                 className={classNames('bg-gray-500/50 font-normal px-2 py-1 ml-1 text-xs', {
@@ -145,25 +137,25 @@ function FileEntry({ file, node, isOurFile }: Props) {
             </button>}
             {isOurFile && !isCreatingFolder && <>
                 {isDirectory && <button
-                    className={classNames('bg-gray-500/50 hover:bg-white/50 ml-1 py-1 px-2', { 'hidden': !showButtons })}
+                    className={'icon alt thin ml-2'}
                     onClick={() => isOurFile && setIsCreatingFolder(!isCreatingFolder)}
                 >
                     <FaFolderPlus />
                 </button>}
                 {!isDirectory && <button
-                    className={classNames("bg-gray-500/50 hover:bg-white/50 ml-1 py-1 px-2", { 'hidden': !showButtons })}
+                    className={"icon alt thin ml-2"}
                     onClick={onDownload}
                 >
                     <FaDownload />
                 </button>}
                 <button
-                    className={classNames('bg-gray-500/50 hover:bg-white/50 ml-1 py-1 px-2', { 'hidden': !showButtons && !fileHasSpecialPermissions })}
+                    className={classNames('icon alt thin ml-2', { 'hidden': !fileHasSpecialPermissions })}
                     onClick={onEditPermissions}
                 >
                     {fileHasSpecialPermissions ? <FaLock /> :  <FaLockOpen />}
                 </button>
                 <button
-                    className={classNames('bg-gray-500/50 hover:bg-red-700 ml-1 py-1 px-2', { 'hidden': !showButtons })}
+                    className={'icon alt thin ml-2'}
                     onClick={onDelete}
                 >
                     <FaTrash />
@@ -174,7 +166,6 @@ function FileEntry({ file, node, isOurFile }: Props) {
             <span className='text-xs mx-auto mb-1'>Create a new folder in {trimPathToFilename(file.name)}:</span>
             <div className="flex flex-row">
                 <input
-                    className='bg-gray-800 appearance-none border-2 border-gray-800 py-1 px-2 leading-tight focus:outline-none focus:bg-gray-800 focus:border-blue-500'
                     type="text"
                     value={createdFolderName}
                     placeholder='folder name'
@@ -188,7 +179,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     <FaPlus />
                 </button>
                 <button
-                    className='bg-gray-800 hover:bg-red-700 py-1 px-2 ml-2'
+                    className='hover:bg-red-700 py-1 px-2 ml-2'
                     onClick={() => setIsCreatingFolder(false)}
                 >
                     <FaX />

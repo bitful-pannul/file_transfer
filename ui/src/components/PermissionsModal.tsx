@@ -24,19 +24,23 @@ export const PermissionsModal: React.FC = () => {
   }
 
   return <Modal 
-    title={`Permissions`} 
+    title={`Permissions: ${trimBasePathFromPath(editingPermissionsForPath)}`} 
     onClose={() => setPermissionsModalOpen(false)} 
   >
-    {(fileHasExplicitAllowances || fileHasMixedPermissions) && <div className="flex flex-col mt-4 px-2 py-1 rounded bg-green-500/10">
-      <h2 className="font-bold">Allowed Nodes</h2>
-      <div className="flex flex-col ml-2">
+    {(fileHasExplicitAllowances || fileHasMixedPermissions) && <div 
+      className="flex mt-4 px-2 py-1 rounded bg-white/10"
+    >
+      <h2 className="font-bold">
+        Allowed Nodes
+      </h2>
+      <div className="flex flex-col ml-auto">
         {filePermissions && Object.entries(filePermissions).filter(([_, perm]) => perm).map(([node, _], i) => <div 
             className="flex place-items-center"
             key={i}
           >
           <code>{node}</code>
           <button 
-            className="ml-2"
+            className="ml-auto clear"
             onClick={() => onChangePermissionsForNode(trimBasePathFromPath(editingPermissionsForPath), { node })}
           >
             <FaX />
@@ -44,16 +48,20 @@ export const PermissionsModal: React.FC = () => {
         </div>)}
       </div>
     </div>}
-    {(fileHasExplicitForbiddances || fileHasMixedPermissions) && <div className="flex flex-col mt-4 px-2 py-1 rounded bg-red-500/10">
-      <h2 className="font-bold">Forbidden Nodes</h2>
-      <div className="flex flex-col ml-2">
+    {(fileHasExplicitForbiddances || fileHasMixedPermissions) && <div 
+      className="flex mt-4 px-2 py-1 rounded bg-orange/10"
+    >
+      <h2 className="font-bold">
+        Forbidden Nodes
+      </h2>
+      <div className="flex flex-col ml-auto">
         {filePermissions && Object.entries(filePermissions).filter(([_, perm]) => !perm).map(([node, _], i) => <div 
             className="flex place-items-center"
             key={i}
           >
           <code>{node}</code>
           <button 
-            className="ml-2"
+            className="ml-auto clear"
             onClick={() => onChangePermissionsForNode(trimBasePathFromPath(editingPermissionsForPath), { node })}
           >
             <FaX />
@@ -63,8 +71,8 @@ export const PermissionsModal: React.FC = () => {
     </div>}
     {!filePermissions && <div className="px-2 py-1">No permissions... yet. File is accessible to all.</div>}
     <div className="flex flex-col mt-4">
-      <code>{trimBasePathFromPath(editingPermissionsForPath)}</code>
-      <div className="flex">
+      <h2 className="font-bold">Add permissions for node:</h2>
+      <div className="flex place-items-center">
         <input type="text" 
           value={editingPermsForNode} onChange={e => setEditingPermsForNode(e.target.value)} 
           className="rounded px-2 py-1 bg-gray-600 mb-1 grow"
@@ -73,7 +81,7 @@ export const PermissionsModal: React.FC = () => {
         {knownNodes.length > 0 && <>
           <span className="mx-2">or:</span>
           <select 
-            className="rounded px-2 py-1 bg-gray-600 mb-1 grow"
+            className="rounded px-2 py-1 bg-gray-600 mb-1 grow self-stretch"
             value={editingPermsForNode}
             onChange={e => setEditingPermsForNode(e.target.value)}
           >
@@ -87,7 +95,7 @@ export const PermissionsModal: React.FC = () => {
         <div className="flex flex-col place-items-center rounded bg-white/10 mr-1 py-1 px-2 w-1/2">
           <button 
             disabled={!editingPermsForNode}
-            className={classNames("self-stretch mb-2 bg-green-600 hover:bg-green-700 rounded px-2 py-1", { '!bg-gray-500': !editingPermsForNode })}
+            className={classNames("alt self-stretch mb-2", { '!bg-gray-500': !editingPermsForNode })}
             onClick={() => onChangePerm(true)}
           >
             Allow
@@ -101,7 +109,7 @@ export const PermissionsModal: React.FC = () => {
         <div className="flex flex-col place-items-center rounded bg-white/10 ml-1 py-1 px-2 w-1/2">
           <button 
             disabled={!editingPermsForNode}
-            className={classNames("self-stretch mb-2 bg-red-600 hover:bg-red-700 rounded px-2 py-1", { '!bg-gray-500': !editingPermsForNode })}
+            className={classNames("self-stretch mb-2", { '!bg-gray-500': !editingPermsForNode })}
             onClick={() => onChangePerm(false)}
           >
             Forbid

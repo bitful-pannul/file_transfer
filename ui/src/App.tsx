@@ -46,16 +46,18 @@ function App() {
 
 
   return (
-    <div className='flex text-white'>
-      <div className='flex flex-col w-1/2 bg-gray-800 h-screen sidebar'>
-        <h2 className='text-2xl px-2 py-1 display self-center'>Kino Files</h2>
-        <div className='flex flex-col grow'>
-          <MyFiles node={window.our.node} files={files} />
-          <UploadFiles />
+    <div className='flex flex-col place-items-center place-content-center h-screen w-screen'>
+      <h2 className='text-2xl px-2 py-1 display self-center'>Kino Files</h2>
+      <div className='flex w-full'>
+        <div className='flex flex-col w-1/2 sidebar obox'>
+          <div className='flex flex-col grow'>
+            <MyFiles node={window.our.node} files={files} />
+            <UploadFiles />
+          </div>
         </div>
-      </div>
-      <div className='flex flex-col w-1/2 bg-gray-900 h-screen content px-2 py-1 overflow-y-auto'>
-        <SearchFiles />
+        <div className='flex flex-col w-1/2 content px-2 py-1 overflow-y-auto obox'>
+          <SearchFiles />
+        </div>
       </div>
       {permissionsModalOpen && <PermissionsModal />}
     </div>
