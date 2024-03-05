@@ -828,8 +828,8 @@ button {
   border-radius: 9999px;
 }
 
-.rounded-lg {
-  border-radius: 0.5rem;
+.rounded-xl {
+  border-radius: 0.75rem;
 }
 
 .border-2 {
@@ -867,6 +867,11 @@ button {
 .bg-gray-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+}
+
+.bg-orange {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 84 34 / var(--tw-bg-opacity));
 }
 
 .bg-orange\/10 {
@@ -911,6 +916,11 @@ button {
 .px-4 {
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+.px-5 {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
 }
 
 .px-8 {
@@ -968,10 +978,6 @@ button {
   font-weight: 700;
 }
 
-.font-normal {
-  font-weight: 400;
-}
-
 .leading-tight {
   line-height: 1.25;
 }
@@ -1019,12 +1025,15 @@ button {
 }
 
 .rstcustom__expandButton, .rstcustom__collapseButton {
-  z-index: 1 !important;
-  left: 16px !important;
+  display: none;
 }
 
 .rstcustom__row {
   flex-grow: 1;
+}
+
+.rstcustom__rowLabel {
+  flex-grow: 1 !important;
 }
 
 .rstcustom__rowWrapper:hover {
@@ -1137,14 +1146,19 @@ button.clear {
   border-color: transparent;
   background-color: transparent;
   font-weight: 700;
+}
+
+button.clear:hover {
+  background-color: rgb(255 245 217 / 0.25);
+}
+
+button.clear {
   font-family: 'Barlow';
 }
 
 button.thin {
-  padding-left: 1rem !important;
-  padding-right: 1rem !important;
-  padding-top: 0.5rem !important;
-  padding-bottom: 0.5rem !important;
+  border-style: none !important;
+  padding: 0px !important;
 }
 
 button.icon {

@@ -107,22 +107,22 @@ function FileEntry({ file, node, isOurFile }: Props) {
 
     return (
     <div 
-        className={classNames('flex flex-col font-bold px-4 py-2 max-w-[40vw] self-stretch grow rounded-lg', { 'text-black bg-white hover:bg-orange hover:text-white': !file.dir })}
+        className={classNames('flex flex-col font-bold px-5 py-2 max-w-[40vw] self-stretch grow rounded-xl', { 'text-black bg-white hover:bg-orange hover:text-white': !file.dir, })}
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
     >
-        <div className='flex flex-row justify-between place-items-center pr-1'>
-            <span className='flex whitespace-pre-wrap grow mr-1'>
+        <div className='flex flex-row justify-between place-items-center pr-1 relative'>
+            <div className='flex whitespace-pre-wrap grow mr-1 items-center'>
                 <FileIcon file={file} />
                 {trimPathToFilename(file.name)}
-                {file.dir && <span className='text-white text-xs px-2 py-1'>
-                    {`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`}
+                {file.dir && <span className='text-white text-sm px-2 py-1'>
+                    ({`${file.dir.length} ${file.dir.length === 1 ? 'file' : 'files'}`})
                 </span>}
-            </span>
+            </div>
             {!isDirectory && <span className="ml-auto">{actualFileSize || '0 KB'}</span>}
             {showSaveToNode && <button 
                 disabled={isOurFile || downloadInProgress || downloadComplete}
-                className={classNames('bg-gray-500/50 font-normal px-2 py-1 ml-1 text-xs', {
+                className={classNames('', {
                 isOurFile, downloadInProgress, downloadComplete, 
                 'bg-gray-800': isOurFile || downloadInProgress || downloadComplete })}
                 onClick={onSaveToNode}
@@ -135,32 +135,32 @@ function FileEntry({ file, node, isOurFile }: Props) {
                             ? <span>{downloadInfo?.[1] || 0}%</span>
                             : 'Save to node'}
             </button>}
-            {isOurFile && !isCreatingFolder && <>
+            {showButtons && isOurFile && !isCreatingFolder && <div className={classNames("absolute right-0 flex", {'bg-orange': !isDirectory})}>
                 {isDirectory && <button
-                    className={'icon alt thin ml-2'}
+                    className={classNames('icon thin ml-2')}
                     onClick={() => isOurFile && setIsCreatingFolder(!isCreatingFolder)}
                 >
                     <FaFolderPlus />
                 </button>}
                 {!isDirectory && <button
-                    className={"icon alt thin ml-2"}
+                    className={classNames("icon thin ml-2")}
                     onClick={onDownload}
                 >
                     <FaDownload />
                 </button>}
                 <button
-                    className={classNames('icon alt thin ml-2', { 'hidden': !fileHasSpecialPermissions })}
+                    className={classNames('icon thin ml-2', { 'hidden': !fileHasSpecialPermissions })}
                     onClick={onEditPermissions}
                 >
                     {fileHasSpecialPermissions ? <FaLock /> :  <FaLockOpen />}
                 </button>
                 <button
-                    className={'icon alt thin ml-2'}
+                    className={classNames('icon thin ml-2')}
                     onClick={onDelete}
                 >
                     <FaTrash />
                 </button>
-            </>}
+            </div>}
         </div>
         {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-1'>
             <span className='text-xs mx-auto mb-1'>Create a new folder in {trimPathToFilename(file.name)}:</span>

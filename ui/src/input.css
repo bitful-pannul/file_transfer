@@ -69,12 +69,15 @@
 }
 
 .rstcustom__expandButton, .rstcustom__collapseButton {
-  z-index: 1 !important;
-  left: 16px !important;
+  display: none;
 }
 
 .rstcustom__row {
   flex-grow: 1;
+}
+
+.rstcustom__rowLabel {
+  flex-grow: 1 !important;
 }
 
 .rstcustom__rowWrapper:hover {
@@ -159,12 +162,12 @@ button.alt {
 }
 
 button.clear {
-  @apply bg-transparent border-transparent font-bold;
+  @apply bg-transparent border-transparent font-bold hover:bg-white/25;
   font-family: 'Barlow';
 }
 
 button.thin {
-  @apply !px-4 !py-2;
+  @apply !p-0 !border-none;
 }
 
 button.icon {

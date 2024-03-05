@@ -88,20 +88,20 @@ const MyFiles = ({ files, node }: Props) => {
                 </button>}
                 <button
                     onClick={() => expand(true)}
-                    className='clear'
+                    className='clear ml-2'
                 >
                     <FaChevronDown className='mr-2' />
                     Expand All
                 </button>
                 <button
                     onClick={() => expand(false)}
-                    className='clear'
+                    className='clear ml-2'
                 >
                     <FaChevronUp className='mr-2' />
                     Collapse All
                 </button>
             </h2>
-            {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-2 rounded'>
+            {isCreatingFolder && <div className='flex flex-col p-2'>
                 <span className='mx-auto mb-1'>Create a new folder in /:</span>
                 <div className="flex">
                     <input
@@ -142,7 +142,9 @@ const MyFiles = ({ files, node }: Props) => {
                 }
             </div>
             <div className={classNames('flex flex-col bg-red-500/50 p-1', { hidden: errors.length === 0 })}>
-                {errors.map((error, i) => <span key={i} className='px-2 py-1 flex place-items-center'>
+                {errors.map((error, i) => <span key={i} 
+                    className='px-2 py-1 flex place-items-center'
+                >
                     <span className='flex-grow'>{error}</span>
                     <button 
                         className='bg-white/10 hover:bg-white/20 py-1 px-1 rounded ml-2'
@@ -152,9 +154,9 @@ const MyFiles = ({ files, node }: Props) => {
                     </button>
                 </span>)}
                 {errors.length > 1 && <button 
-                        className='bg-white/10 hover:bg-white/20 py-1 px-1 rounded ml-2'
-                        onClick={clearErrors}
-                    >
+                    className='bg-white/10 hover:bg-white/20 py-1 px-1 rounded ml-2'
+                    onClick={clearErrors}
+                >
                     Clear All
                 </button>}
             </div>
