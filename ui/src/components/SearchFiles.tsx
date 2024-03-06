@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import KinoFile from '../types/KinoFile';
 import FileEntry from './FileEntry';
 import useFileTransferStore from '../store/fileTransferStore';
-import SortableTree, { TreeItem, toggleExpandedForAll } from '@nosferatu500/react-sortable-tree';
+import SortableTree, { TreeItem } from '@nosferatu500/react-sortable-tree';
 import FileExplorerTheme from '@nosferatu500/theme-file-explorer';
 import { FaChevronDown, FaChevronUp, FaMagnifyingGlass } from 'react-icons/fa6';
 
@@ -46,16 +46,27 @@ const SearchFiles = function() {
 
     const treeifyFile: (node: string, f: KinoFile) => TreeItem = (node: string, file: KinoFile) => {
         return {
-            title: <FileEntry file={file} node={node} isOurFile={false} />,
+            title: <FileEntry 
+                file={file} 
+                node={node} 
+                isOurFile={false} 
+                expanded={expandedFiles[file.name]} 
+                onToggleExpand={() => toggleExpandedForOne(file.name, !expandedFiles[file.name])} 
+            />,
             children: file.dir ? file.dir.map((f: KinoFile) => treeifyFile(node,f)) : undefined,
             file,
             expanded: !!expandedFiles[file.name]
         } as TreeItem;
     }
 
+    const toggleExpandedForOne = (path: string, expanded: boolean) => {
+        setExpandedFiles((prev) => ({ ...prev, [path]: expanded }));
+    }
+
     const expand = (expanded: boolean) => {
-        setTreeData(toggleExpandedForAll({ treeData, expanded }))
-        setExpandedFiles((prev) => ({ ...prev, ...treeData.reduce((acc, node) => ({ ...acc, [node.file.name]: expanded }), {}) }))
+        foundFiles?.forEach(file => {
+            toggleExpandedForOne(file.name, expanded)
+        })
     }
 
     useEffect(() => {
@@ -63,7 +74,7 @@ const SearchFiles = function() {
             const td = foundFiles.map(file => treeifyFile(searchTerm, file))
             setTreeData(td || [])
         }
-    }, [foundFiles])
+    }, [foundFiles, expandedFiles])
 
     return (
         <div className='flex flex-col grow'>
