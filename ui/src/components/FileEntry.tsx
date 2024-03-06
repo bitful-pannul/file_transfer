@@ -119,7 +119,7 @@ function FileEntry({ file, node, isOurFile, expanded, onToggleExpand }: Props) {
     >
         <div className='flex flex-row justify-between place-items-center pr-1 relative'>
             <div 
-                className='flex whitespace-pre-wrap grow mr-1 items-center max-w-[25vw]'
+                className='flex whitespace-pre-wrap grow mr-1 items-center max-w-[20vw]'
             >
                 {(file.dir) && <button 
                     className="clear thin mr-4 -ml-4"

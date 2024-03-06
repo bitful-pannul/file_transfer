@@ -17,6 +17,7 @@ const SearchFiles = function() {
     const handleSearch = () => {
         if (!searchTerm) return alert('Please enter a node name.');
         if (!searchTerm.match(/^[a-zA-Z0-9-]+\.os$/)) return alert('Invalid node name.');
+        if (searching) return
         setKnownNodes([...knownNodes, searchTerm].filter((v, i, a) => a.indexOf(v) === i));
         setSearching(true);
         try {
@@ -79,7 +80,6 @@ const SearchFiles = function() {
                     />
                     <button
                         onClick={handleSearch}
-                        disabled={searching}
                         className='clear absolute right-1 top-1 text-sm'
                     >
                         <FaMagnifyingGlass />
@@ -130,7 +130,7 @@ const SearchFiles = function() {
                     <h2>
                         <span className='text-xl font-bold font-mono'>{searchTerm}:</span> <span className='text-xs'>{foundFiles.length} files</span>
                     </h2>
-                    <div className='grow'>
+                    <div className='grow -ml-8 -mr-6'>
                         <SortableTree
                             theme={FileExplorerTheme}
                             treeData={treeData}

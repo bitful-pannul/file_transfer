@@ -142,7 +142,7 @@ const MyFiles = ({ files, node }: Props) => {
                     </button>
                 </div>
             </div>}
-            <div className='grow h-[50vh] overflow-y-auto'>
+            <div className='grow h-[50vh] -ml-6 overflow-y-auto'>
                 {files.length === 0
                     ? <span className='text-white px-2 py-1'>No files... yet.</span>
                     : <SortableTree
