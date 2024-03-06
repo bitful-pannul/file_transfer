@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import useFileTransferStore from "../store/fileTransferStore"
 import Modal from "./Modal";
 import { trimBasePathFromPath } from "../utils/file";
-import { FaChevronDown, FaX } from "react-icons/fa6";
+import { FaX } from "react-icons/fa6";
 import classNames from "classnames";
 
 export const PermissionsModal: React.FC = () => {
