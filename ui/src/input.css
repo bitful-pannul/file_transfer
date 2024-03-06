@@ -60,7 +60,7 @@
   }
 
   .button {
-    @apply flex m-0 py-2 px-6 rounded border-orange bg-orange border-2 cursor-pointer place-items-center place-content-center text-center rounded-lg heading transition ease-in-out duration-100;
+    @apply flex m-0 py-2 px-6 rounded border-orange bg-orange border-2 cursor-pointer place-items-center place-content-center text-center rounded-lg heading transition ease-in-out duration-100 hover:bg-black hover:text-white;
   }
 
   button {
@@ -72,11 +72,11 @@
   }
   
   .alt {
-    @apply bg-white text-black border-white hover:bg-orange hover:text-white;
+    @apply bg-white text-black border-white;
   }
 
   .thin {
-    @apply !p-0 !border-none;
+    @apply px-0 border-none;
   }
 
   .icon {
@@ -140,20 +140,19 @@ body {
 input {
   all: unset;
 }
+select,
 input[type="text"],
 input[type="password"],
 input[type="checkbox"] {
-  padding: 0.5em 1em;
+  padding: 0.5em 1.5em;
   border: 2px solid var(--orange-medium);
   border-radius: 8px;
-  box-sizing: border-box;
-  font-size: 1em;
   background-color: var(--input-background);
   color: var(--text-light);
 }
 input[type="text"],
 input[type="password"] {
-  width: 100%;
+  @apply w-full;
 }
 input[type="checkbox"] {
   padding: 0.25em 0.8em;
@@ -180,6 +179,13 @@ input[type="checkbox"]:checked {
 }
 ::-ms-input-placeholder {
   color: var(--text-light) !important;
+}
+select {
+  @apply appearance-none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23ffffff" d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 1.25rem center;
+  padding-right: 3em;
 }
 
 button:hover {

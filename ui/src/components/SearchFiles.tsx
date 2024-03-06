@@ -4,6 +4,7 @@ import FileEntry from './FileEntry';
 import useFileTransferStore from '../store/fileTransferStore';
 import SortableTree, { TreeItem, toggleExpandedForAll } from '@nosferatu500/react-sortable-tree';
 import FileExplorerTheme from '@nosferatu500/theme-file-explorer';
+import { FaChevronDown, FaChevronUp, FaMagnifyingGlass } from 'react-icons/fa6';
 
 const SearchFiles = function() {
     const { knownNodes, setKnownNodes } = useFileTransferStore();
@@ -64,13 +65,12 @@ const SearchFiles = function() {
     }, [foundFiles])
 
     return (
-        <div className='flex flex-col px-2 py-1 grow'>
-            <h2 className='text-xl mb-2 font-bold'>Search files on the network</h2>
-            <div className='flex place-items-center'>
-                <div className='flex grow place-items-center mb-2'>
+        <div className='flex flex-col grow'>
+            <h3 className='text-center mb-4'>Search files on the network</h3>
+            <div className='flex place-items-center self-stretch'>
+                <div className='flex grow place-items-center relative'>
                     <span className='mr-2'>Node:</span>
                     <input
-                        className='bg-gray-800 appearance-none border-2 border-gray-800 rounded w-full py-2 px-4 text-white leading-tight focus:outline-none focus:bg-gray-800 focus:border-blue-500'
                         type="text"
                         value={searchTerm}
                         placeholder='somenode.os'
@@ -80,14 +80,17 @@ const SearchFiles = function() {
                     <button
                         onClick={handleSearch}
                         disabled={searching}
+                        className='clear absolute right-1 top-1 text-sm'
                     >
-                        {searching ? 'Searching...' : 'Search'}
+                        <FaMagnifyingGlass />
                     </button>
                 </div>
-                {knownNodes.length > 0 && <div className='flex grow place-items-center mb-2'>
+                {knownNodes.length > 0 && <div 
+                    className='flex grow place-items-center'
+                >
                     <span className='mx-2'>or:</span>
                     <select
-                        className='bg-gray-800 appearance-none border-2 border-gray-800 rounded w-full py-2 px-4 text-white leading-tight focus:outline-none focus:bg-gray-800 focus:border-blue-500'
+                        className='w-full'
                         onChange={(e) => {setSearchTerm(e.target.value)}}
                         disabled={searching}
                     >
@@ -98,40 +101,50 @@ const SearchFiles = function() {
                     </select>
                 </div>}
             </div>
-            {searching && <span className='text-white'>Searching...</span>}
-            {!searching && !foundFiles && <span className='text-white'>Enter a node name to search for files.</span>}
-            {!searching && foundFiles && <h2 className='text-xl font-bold flex place-items-center'>
-                Search Results
-                <button className='rounded px-2 py-1 ml-4 bg-white/10 text-sm'
-                    onClick={() => expand(true)}
+            <div className='obox flex flex-col grow'>
+                {searching && <span>Searching...</span>}
+                {!searching && !foundFiles && <span>Enter a node name to search for files.</span>}
+                {!searching && foundFiles && <div 
+                    className='flex place-items-center'
                 >
-                    Expand All
-                </button>
-                <button className='rounded px-2 py-1 ml-4 bg-white/10 text-sm'
-                    onClick={() => expand(false)}
-                >
-                    Collapse All
-                </button>
-            </h2>}
-            {!searching && foundFiles && foundFiles.length === 0 && <span className='text-white'>No files found.</span>}
-            {foundFiles && foundFiles.length > 0 && <div className='flex flex-col px-2 py-1 grow'>
-                <h2>
-                    <span className='text-xl font-bold font-mono'>{searchTerm}:</span> <span className='text-xs'>{foundFiles.length} files</span>
-                </h2>
-                <div className='grow overflow-y-auto'>
-                    <SortableTree
-                        theme={FileExplorerTheme}
-                        treeData={treeData}
-                        onChange={treeData => setTreeData([...treeData])}
-                        getNodeKey={({ node }: { node: TreeItem }) => node.file.name}
-                        onVisibilityToggle={({ expanded, node }) => {
-                            setExpandedFiles((prev) => ({ ...prev, [node?.file?.name]: expanded }))
-                        }}
-                        canDrag={() => false}
-                        canDrop={() => false}
-                    />
-                </div>
-            </div>}
+                    <h2>
+                        Search Results
+                    </h2>
+                    <button
+                        onClick={() => expand(true)}
+                        className='clear ml-2'
+                    >
+                        <FaChevronDown className='mr-2 text-[12px]' />
+                        <span>Expand All</span>
+                    </button>
+                    <button
+                        onClick={() => expand(false)}
+                        className='clear ml-2'
+                    >
+                        <FaChevronUp className='mr-2 text-[12px]' />
+                        <span>Collapse All</span>
+                    </button>
+                </div>}
+                {!searching && foundFiles && foundFiles.length === 0 && <span className='text-white'>No files found.</span>}
+                {foundFiles && foundFiles.length > 0 && <div className='flex flex-col px-2 py-1 grow'>
+                    <h2>
+                        <span className='text-xl font-bold font-mono'>{searchTerm}:</span> <span className='text-xs'>{foundFiles.length} files</span>
+                    </h2>
+                    <div className='grow'>
+                        <SortableTree
+                            theme={FileExplorerTheme}
+                            treeData={treeData}
+                            onChange={treeData => setTreeData([...treeData])}
+                            getNodeKey={({ node }: { node: TreeItem }) => node.file.name}
+                            onVisibilityToggle={({ expanded, node }) => {
+                                setExpandedFiles((prev) => ({ ...prev, [node?.file?.name]: expanded }))
+                            }}
+                            canDrag={() => false}
+                            canDrop={() => false}
+                        />
+                    </div>
+                </div>}
+            </div>
         </div>
     );
 };

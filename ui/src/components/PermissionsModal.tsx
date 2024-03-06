@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import useFileTransferStore from "../store/fileTransferStore"
 import Modal from "./Modal";
 import { trimBasePathFromPath } from "../utils/file";
-import { FaX } from "react-icons/fa6";
+import { FaChevronDown, FaX } from "react-icons/fa6";
 import classNames from "classnames";
 
 export const PermissionsModal: React.FC = () => {
@@ -74,14 +74,14 @@ export const PermissionsModal: React.FC = () => {
       <h2 className="font-bold">Add permissions for node:</h2>
       <div className="flex place-items-center">
         <input type="text" 
-          value={editingPermsForNode} onChange={e => setEditingPermsForNode(e.target.value)} 
-          className="rounded px-2 py-1 bg-gray-600 mb-1 grow"
+          value={editingPermsForNode} 
+          onChange={e => setEditingPermsForNode(e.target.value)} 
           placeholder="example-node.os"
         />
         {knownNodes.length > 0 && <>
           <span className="mx-2">or:</span>
           <select 
-            className="rounded px-2 py-1 bg-gray-600 mb-1 grow self-stretch"
+            className="grow w-full"
             value={editingPermsForNode}
             onChange={e => setEditingPermsForNode(e.target.value)}
           >

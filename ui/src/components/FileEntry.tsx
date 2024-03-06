@@ -118,7 +118,9 @@ function FileEntry({ file, node, isOurFile, expanded, onToggleExpand }: Props) {
         onMouseLeave={() => setShowButtons(false)}
     >
         <div className='flex flex-row justify-between place-items-center pr-1 relative'>
-            <div className='flex whitespace-pre-wrap grow mr-1 items-center'>
+            <div 
+                className='flex whitespace-pre-wrap grow mr-1 items-center max-w-[25vw]'
+            >
                 {(file.dir) && <button 
                     className="clear thin mr-4 -ml-4"
                     onClick={() => onToggleExpand && onToggleExpand()}
@@ -134,7 +136,7 @@ function FileEntry({ file, node, isOurFile, expanded, onToggleExpand }: Props) {
             {!isDirectory && <span className="ml-auto">{actualFileSize || '0 KB'}</span>}
             {showSaveToNode && <button 
                 disabled={isOurFile || downloadInProgress || downloadComplete}
-                className={classNames('', {
+                className={classNames('px-2 py-0 ml-2', {
                 isOurFile, downloadInProgress, downloadComplete, 
                 'bg-gray-800': isOurFile || downloadInProgress || downloadComplete })}
                 onClick={onSaveToNode}

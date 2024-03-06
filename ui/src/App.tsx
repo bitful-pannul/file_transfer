@@ -55,7 +55,7 @@ function App() {
             <UploadFiles />
           </div>
         </div>
-        <div className='flex flex-col w-1/2 content px-2 py-1 overflow-y-auto obox'>
+        <div className='flex flex-col w-1/2 content px-2 py-1 overflow-y-auto'>
           <SearchFiles />
         </div>
       </div>

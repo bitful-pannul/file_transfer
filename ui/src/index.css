@@ -616,6 +616,13 @@ h6 {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.button:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 33 31 / var(--tw-bg-opacity));
+  --tw-text-opacity: 1;
+  color: rgb(255 245 217 / var(--tw-text-opacity));
+}
+
 button {
   font-family: OpenSans;
   letter-spacing: -0.01em;
@@ -643,6 +650,13 @@ button {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+button:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 33 31 / var(--tw-bg-opacity));
+  --tw-text-opacity: 1;
+  color: rgb(255 245 217 / var(--tw-text-opacity));
+}
+
 .clear {
   border-color: transparent;
   background-color: transparent;
@@ -663,16 +677,10 @@ button {
   color: rgb(34 33 31 / var(--tw-text-opacity));
 }
 
-.alt:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(243 84 34 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 245 217 / var(--tw-text-opacity));
-}
-
 .thin {
-  border-style: none !important;
-  padding: 0px !important;
+  border-style: none;
+  padding-left: 0px;
+  padding-right: 0px;
 }
 
 .icon {
@@ -719,8 +727,16 @@ button {
   right: 0px;
 }
 
+.right-1 {
+  right: 0.25rem;
+}
+
 .top-0 {
   top: 0px;
+}
+
+.top-1 {
+  top: 0.25rem;
 }
 
 .mx-2 {
@@ -753,6 +769,10 @@ button {
 
 .mb-2 {
   margin-bottom: 0.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
 }
 
 .ml-1 {
@@ -827,6 +847,14 @@ button {
   width: 100vw;
 }
 
+.min-w-\[500px\] {
+  min-width: 500px;
+}
+
+.max-w-\[25vw\] {
+  max-width: 25vw;
+}
+
 .flex-grow {
   flex-grow: 1;
 }
@@ -837,12 +865,6 @@ button {
 
 .cursor-pointer {
   cursor: pointer;
-}
-
-.appearance-none {
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
 }
 
 .flex-row {
@@ -877,6 +899,10 @@ button {
   justify-items: center;
 }
 
+.self-start {
+  align-self: flex-start;
+}
+
 .self-center {
   align-self: center;
 }
@@ -901,17 +927,12 @@ button {
   border-radius: 9999px;
 }
 
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
 .rounded-xl {
   border-radius: 0.75rem;
-}
-
-.border-2 {
-  border-width: 2px;
-}
-
-.border-gray-800 {
-  --tw-border-opacity: 1;
-  border-color: rgb(31 41 55 / var(--tw-border-opacity));
 }
 
 .\!bg-gray-500 {
@@ -926,11 +947,6 @@ button {
 
 .bg-black\/30 {
   background-color: rgb(34 33 31 / 0.3);
-}
-
-.bg-gray-600 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(75 85 99 / var(--tw-bg-opacity));
 }
 
 .bg-gray-800 {
@@ -992,6 +1008,11 @@ button {
   padding-right: 2rem;
 }
 
+.py-0 {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
 .py-1 {
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
@@ -1000,6 +1021,11 @@ button {
 .py-2 {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .pl-4 {
@@ -1044,10 +1070,6 @@ button {
 
 .font-bold {
   font-weight: 700;
-}
-
-.leading-tight {
-  line-height: 1.25;
 }
 
 .text-black {
@@ -1141,14 +1163,13 @@ input {
   all: unset;
 }
 
+select,
 input[type="text"],
 input[type="password"],
 input[type="checkbox"] {
-  padding: 0.5em 1em;
+  padding: 0.5em 1.5em;
   border: 2px solid var(--orange-medium);
   border-radius: 8px;
-  box-sizing: border-box;
-  font-size: 1em;
   background-color: var(--input-background);
   color: var(--text-light);
 }
@@ -1195,6 +1216,16 @@ input[type="checkbox"]:checked {
   color: var(--text-light) !important;
 }
 
+select {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23ffffff" d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 1.25rem center;
+  padding-right: 3em;
+}
+
 button:hover {
   opacity: 0.9;
   box-shadow: none;
@@ -1220,11 +1251,6 @@ button:disabled {
   background-color: rgb(243 84 34 / var(--tw-bg-opacity));
 }
 
-.hover\:bg-red-700:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(185 28 28 / var(--tw-bg-opacity));
-}
-
 .hover\:bg-white\/20:hover {
   background-color: rgb(255 245 217 / 0.2);
 }
@@ -1232,19 +1258,4 @@ button:disabled {
 .hover\:text-white:hover {
   --tw-text-opacity: 1;
   color: rgb(255 245 217 / var(--tw-text-opacity));
-}
-
-.focus\:border-blue-500:focus {
-  --tw-border-opacity: 1;
-  border-color: rgb(59 130 246 / var(--tw-border-opacity));
-}
-
-.focus\:bg-gray-800:focus {
-  --tw-bg-opacity: 1;
-  background-color: rgb(31 41 55 / var(--tw-bg-opacity));
-}
-
-.focus\:outline-none:focus {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
 }
