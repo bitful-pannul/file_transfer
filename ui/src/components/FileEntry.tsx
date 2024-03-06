@@ -4,14 +4,16 @@ import useFileTransferStore from "../store/fileTransferStore";
 import classNames from "classnames";
 import { getReadableFilesize, trimBasePathFromPath, trimPathToFilename } from "../utils/file";
 import { FileIcon } from "./FileIcon";
-import { FaDownload, FaFolderPlus, FaLock, FaLockOpen, FaPlus, FaTrash, FaX } from "react-icons/fa6";
+import { FaChevronDown, FaChevronRight, FaDownload, FaFolderPlus, FaLock, FaLockOpen, FaPlus, FaTrash, FaX } from "react-icons/fa6";
 
 interface Props {
     file: KinoFile
     node: string
     isOurFile: boolean
+    expanded?: boolean
+    onToggleExpand?: () => void
 }
-function FileEntry({ file, node, isOurFile }: Props) {
+function FileEntry({ file, node, isOurFile, expanded, onToggleExpand }: Props) {
     const { filesInProgress, files, api, refreshFiles, onAddFolder, setEditingPermissionsForPath, setPermissionsModalOpen, permissions } = useFileTransferStore();
     const [actualFileSize, setActualFileSize] = useState<string>('')
     const [isCreatingFolder, setIsCreatingFolder] = useState<boolean>(false)
@@ -107,12 +109,22 @@ function FileEntry({ file, node, isOurFile }: Props) {
 
     return (
     <div 
-        className={classNames('flex flex-col font-bold px-5 py-2 max-w-[40vw] self-stretch grow rounded-xl', { 'text-black bg-white hover:bg-orange hover:text-white': !file.dir, })}
+        className={classNames(
+            'flex flex-col font-bold px-4 self-stretch grow rounded-xl', 
+            { 
+                'py-2 text-black bg-white hover:bg-orange hover:text-white': !file.dir, 
+            })}
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
     >
         <div className='flex flex-row justify-between place-items-center pr-1 relative'>
             <div className='flex whitespace-pre-wrap grow mr-1 items-center'>
+                {(file.dir) && <button 
+                    className="clear thin mr-4 -ml-4"
+                    onClick={() => onToggleExpand && onToggleExpand()}
+                >
+                    {expanded ? <FaChevronDown /> : <FaChevronRight />}
+                </button>}
                 <FileIcon file={file} />
                 {trimPathToFilename(file.name)}
                 {file.dir && <span className='text-white text-sm px-2 py-1'>
@@ -149,7 +161,7 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     <FaDownload />
                 </button>}
                 <button
-                    className={classNames('icon thin ml-2', { 'hidden': !fileHasSpecialPermissions })}
+                    className={classNames('icon thin ml-2')}
                     onClick={onEditPermissions}
                 >
                     {fileHasSpecialPermissions ? <FaLock /> :  <FaLockOpen />}
@@ -162,8 +174,8 @@ function FileEntry({ file, node, isOurFile }: Props) {
                 </button>
             </div>}
         </div>
-        {isCreatingFolder && <div className='flex flex-col bg-gray-500/50 p-1'>
-            <span className='text-xs mx-auto mb-1'>Create a new folder in {trimPathToFilename(file.name)}:</span>
+        {isCreatingFolder && <div className='flex flex-col p-1'>
+            <span className='mx-auto mb-1'>Create a new folder in {trimPathToFilename(file.name)}:</span>
             <div className="flex flex-row">
                 <input
                     type="text"
@@ -173,13 +185,13 @@ function FileEntry({ file, node, isOurFile }: Props) {
                     onKeyUp={(e) => e.key === 'Enter' && onFolderAdded()}
                 />
                 <button
-                    className='py-1 px-2 ml-2'
+                    className='ml-2 icon'
                     onClick={onFolderAdded}
                 >
                     <FaPlus />
                 </button>
                 <button
-                    className='hover:bg-red-700 py-1 px-2 ml-2'
+                    className='ml-2 icon'
                     onClick={() => setIsCreatingFolder(false)}
                 >
                     <FaX />

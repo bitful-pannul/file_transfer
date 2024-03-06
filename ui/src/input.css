@@ -60,28 +60,61 @@
   }
 
   .button {
-    @apply flex m-0 py-2 px-6 rounded cursor-pointer place-content-center text-center rounded-lg heading;
+    @apply flex m-0 py-2 px-6 rounded border-orange bg-orange border-2 cursor-pointer place-items-center place-content-center text-center rounded-lg heading transition ease-in-out duration-100;
   }
 
   button {
     @apply button;
   }
+
+  .clear {
+    @apply bg-transparent border-transparent font-bold hover:bg-white/25 font-['Barlow'];
+  }
+  
+  .alt {
+    @apply bg-white text-black border-white hover:bg-orange hover:text-white;
+  }
+
+  .thin {
+    @apply !p-0 !border-none;
+  }
+
+  .icon {
+    @apply 
+      flex items-center place-content-center 
+      bg-transparent 
+      w-11 p-3 text-[14px] 
+      rounded-full border-white/25;
+  }
+
+  .icon.alt {
+    @apply border-black/25 hover:border-white/25
+  }
 }
 
-.rstcustom__expandButton, .rstcustom__collapseButton {
+
+/*
+ * draggable file tree style overrides 
+ */
+.rstcustom__node > div {
+ display: flex;
+}
+
+.rstcustom__expandButton,
+.rstcustom__collapseButton {
   display: none;
-}
-
-.rstcustom__row {
-  flex-grow: 1;
 }
 
 .rstcustom__rowLabel {
   flex-grow: 1 !important;
 }
 
+.rstcustom__rowWrapper, .rstcustom__row {
+  flex-grow: 1;
+}
+
 .rstcustom__rowWrapper:hover {
-  @apply !opacity-100;
+  opacity: 1 !important;
 }
 
 :root {
@@ -110,8 +143,8 @@ input {
 input[type="text"],
 input[type="password"],
 input[type="checkbox"] {
-  padding: 1em;
-  border: 1px solid var(--orange-medium);
+  padding: 0.5em 1em;
+  border: 2px solid var(--orange-medium);
   border-radius: 8px;
   box-sizing: border-box;
   font-size: 1em;
@@ -147,35 +180,6 @@ input[type="checkbox"]:checked {
 }
 ::-ms-input-placeholder {
   color: var(--text-light) !important;
-}
-
-button, [type='button'], [type='reset'], [type='submit'], .button {
-  border-width: 2px;
-  border-style: solid;
-  border-color: var(--orange-medium);
-  background: var(--orange-medium);
-  transition: all 0.1s;
-}
-
-button.alt {
-  @apply bg-white text-black border-white hover:bg-orange hover:text-white;
-}
-
-button.clear {
-  @apply bg-transparent border-transparent font-bold hover:bg-white/25;
-  font-family: 'Barlow';
-}
-
-button.thin {
-  @apply !p-0 !border-none;
-}
-
-button.icon {
-  @apply flex items-center place-content-center bg-transparent w-14 p-4 text-[16px] rounded-full border-white/25;
-}
-
-button.icon.alt {
-  @apply border-black/25 hover:border-white/25
 }
 
 button:hover {

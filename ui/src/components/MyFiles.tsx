@@ -3,7 +3,7 @@ import KinoFile from '../types/KinoFile';
 import { useEffect, useState } from 'react';
 import useFileTransferStore from '../store/fileTransferStore';
 import '@nosferatu500/react-sortable-tree/style.css';
-import SortableTree, { TreeItem, toggleExpandedForAll } from '@nosferatu500/react-sortable-tree';
+import SortableTree, { TreeItem } from '@nosferatu500/react-sortable-tree';
 import FileExplorerTheme from '@nosferatu500/theme-file-explorer';
 import FileEntry from './FileEntry';
 import { TreeFile } from '../types/TreeFile';
@@ -36,16 +36,30 @@ const MyFiles = ({ files, node }: Props) => {
             }, 1000);
         })
     };
+    
+    const toggleExpandedForOne = (path: string, expanded: boolean) => {
+        setExpandedFiles((prev) => ({ ...prev, [path]: expanded }));
+    }
 
     const treeifyFile: (f: KinoFile) => TreeItem = (file: KinoFile) => {
+        const expanded = file.dir 
+            ? expandedFiles[file.name]
+            : undefined
         return {
-            title: <FileEntry file={file} node={our.node} isOurFile={true} />,
-            children: file.dir ? file.dir.map((f: KinoFile) => treeifyFile(f)) : undefined,
+            title: <FileEntry 
+                file={file} 
+                node={our.node} 
+                isOurFile={true} 
+                expanded={expanded} 
+                onToggleExpand={() => toggleExpandedForOne(file.name, !expanded)} 
+            />,
+            children: file.dir 
+                ? file.dir.map((f: KinoFile) => treeifyFile(f)) 
+                : undefined,
             file,
             expanded: !!expandedFiles[file.name]
         } as TreeItem;
     }
-
     const onFileMoved = ({ node, nextParentNode }: { node: TreeFile, nextParentNode: TreeFile, prevPath: number[], nextPath: number[] }) => {
         console.log('moving file', node, nextParentNode)
         setTimeout(() => {
@@ -69,38 +83,41 @@ const MyFiles = ({ files, node }: Props) => {
         const td = files.map((file: KinoFile) => treeifyFile(file)).sort((a, b) => a.file.name.localeCompare(b.file.name));
         console.log({ td })
         setTreeData(td);
-    }, [files]);
+    }, [files, expandedFiles]);
 
     const expand = (expanded: boolean) => {
-        setTreeData(toggleExpandedForAll({ treeData, expanded }))
-        setExpandedFiles((prev) => ({ ...prev, ...treeData.reduce((acc, node) => ({ ...acc, [node.file.name]: expanded }), {}) }))
+        files.forEach(file => {
+            toggleExpandedForOne(file.name, expanded)
+        })
     }
     
     return (
         <div className='flex flex-col grow self-stretch'>
-            <h2 className='px-2 py-1 flex place-items-center'>
-                <span className='heading'>{node}</span>
-                {!isCreatingFolder && <button
-                    className='icon ml-4'
-                    onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-                >
-                    <FaFolderPlus />
-                </button>}
+            <div className='flex place-items-center'>
+                <h2 className='px-2 py-1 flex place-items-center'>
+                    <span className='heading'>{node}</span>
+                    {!isCreatingFolder && <button
+                        className='icon ml-4'
+                        onClick={() => setIsCreatingFolder(!isCreatingFolder)}
+                    >
+                        <FaFolderPlus />
+                    </button>}
+                </h2>
                 <button
                     onClick={() => expand(true)}
                     className='clear ml-2'
                 >
-                    <FaChevronDown className='mr-2' />
-                    Expand All
+                    <FaChevronDown className='mr-2 text-[12px]' />
+                    <span>Expand All</span>
                 </button>
                 <button
                     onClick={() => expand(false)}
                     className='clear ml-2'
                 >
-                    <FaChevronUp className='mr-2' />
-                    Collapse All
+                    <FaChevronUp className='mr-2 text-[12px]' />
+                    <span>Collapse All</span>
                 </button>
-            </h2>
+            </div>
             {isCreatingFolder && <div className='flex flex-col p-2'>
                 <span className='mx-auto mb-1'>Create a new folder in /:</span>
                 <div className="flex">
@@ -135,9 +152,7 @@ const MyFiles = ({ files, node }: Props) => {
                         canNodeHaveChildren={(node: TreeItem) => node.file.dir}
                         onMoveNode={onFileMoved}
                         getNodeKey={({ node }: { node: TreeItem }) => node.file.name}
-                        onVisibilityToggle={({ expanded, node }) => {
-                            setExpandedFiles((prev) => ({ ...prev, [node?.file?.name]: expanded }))
-                        }}
+                        onVisibilityToggle={({ expanded, node }) => toggleExpandedForOne(node?.file?.name, expanded)}
                     />
                 }
             </div>
