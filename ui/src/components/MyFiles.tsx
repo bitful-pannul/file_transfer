@@ -30,6 +30,7 @@ const MyFiles = ({ files, node }: Props) => {
     const onFolderAdded = () => {
         onAddFolder('', createdFolderName, () => {
             setIsCreatingFolder(false);
+            setCreatedFolderName('')
 
             setTimeout(() => {
                 refreshFiles();
