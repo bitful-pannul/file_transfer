@@ -6,6 +6,7 @@ import useFileTransferStore from './store/fileTransferStore';
 import SearchFiles from './components/SearchFiles';
 import UploadFiles from './components/UploadFiles';
 import { PermissionsModal } from './components/PermissionsModal';
+import kinodeLogo from './assets/kinode.svg'
 
 declare global {
   var window: Window & typeof globalThis;
@@ -47,7 +48,10 @@ function App() {
 
   return (
     <div className='flex flex-col place-items-center place-content-center h-screen w-screen'>
-      <h2 className='text-2xl px-2 py-1 display self-center'>Kino Files</h2>
+      <div className='flex flex-col place-items-center'>
+        <h1 className='display text-6xl'>Kino Files</h1>
+        <img src={kinodeLogo} className='w-1/4 mt-16 mb-8' />
+      </div>
       <div className='flex w-full'>
         <div className='flex flex-col w-1/2 sidebar obox'>
           <div className='flex flex-col grow'>

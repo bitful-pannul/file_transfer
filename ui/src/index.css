@@ -758,6 +758,18 @@ button:hover {
   margin-left: -1rem;
 }
 
+.-ml-6 {
+  margin-left: -1.5rem;
+}
+
+.-ml-8 {
+  margin-left: -2rem;
+}
+
+.-mr-6 {
+  margin-right: -1.5rem;
+}
+
 .mb-1 {
   margin-bottom: 0.25rem;
 }
@@ -768,6 +780,10 @@ button:hover {
 
 .mb-4 {
   margin-bottom: 1rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
 }
 
 .ml-1 {
@@ -802,32 +818,12 @@ button:hover {
   margin-right: 1rem;
 }
 
+.mt-16 {
+  margin-top: 4rem;
+}
+
 .mt-4 {
   margin-top: 1rem;
-}
-
-.ml-\[-1em\] {
-  margin-left: -1em;
-}
-
-.-ml-2 {
-  margin-left: -0.5rem;
-}
-
-.-ml-6 {
-  margin-left: -1.5rem;
-}
-
-.-ml-8 {
-  margin-left: -2rem;
-}
-
-.-mr-2 {
-  margin-right: -0.5rem;
-}
-
-.-mr-6 {
-  margin-right: -1.5rem;
 }
 
 .flex {
@@ -854,6 +850,10 @@ button:hover {
   width: 50%;
 }
 
+.w-1\/4 {
+  width: 25%;
+}
+
 .w-4 {
   width: 1rem;
 }
@@ -868,10 +868,6 @@ button:hover {
 
 .min-w-\[500px\] {
   min-width: 500px;
-}
-
-.max-w-\[25vw\] {
-  max-width: 25vw;
 }
 
 .max-w-\[20vw\] {
@@ -1063,9 +1059,9 @@ button:hover {
   font-family: Iosevka, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-.text-2xl {
-  font-size: 1.5rem;
-  line-height: 2rem;
+.text-6xl {
+  font-size: 3.75rem;
+  line-height: 1;
 }
 
 .text-\[12px\] {
