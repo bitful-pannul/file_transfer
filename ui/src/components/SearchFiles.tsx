@@ -139,7 +139,7 @@ const SearchFiles = function() {
                 {!searching && foundFiles && foundFiles.length === 0 && <span className='text-white'>No files found.</span>}
                 {foundFiles && foundFiles.length > 0 && <div className='flex flex-col px-2 py-1 grow'>
                     <h2>
-                        <span className='text-xl font-bold font-mono'>{searchTerm}:</span> <span className='text-xs'>{foundFiles.length} files</span>
+                       Files on {searchTerm}:
                     </h2>
                     <div className='grow -ml-8 -mr-6'>
                         <SortableTree
