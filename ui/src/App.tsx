@@ -52,14 +52,14 @@ function App() {
         <h1 className='display text-6xl'>Kino Files</h1>
         <img src={kinodeLogo} className='w-1/4 mt-16 mb-8' />
       </div>
-      <div className='flex w-full'>
-        <div className='flex flex-col w-1/2 sidebar obox'>
+      <div className='flex w-full p-4'>
+        <div className='flex flex-col w-1/2 sidebar obox mr-4'>
           <div className='flex flex-col grow'>
             <MyFiles node={window.our.node} files={files} />
             <UploadFiles />
           </div>
         </div>
-        <div className='flex flex-col w-1/2 content px-2 py-1 overflow-y-auto'>
+        <div className='flex flex-col w-1/2 content overflow-y-auto'>
           <SearchFiles />
         </div>
       </div>

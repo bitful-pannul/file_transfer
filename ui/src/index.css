@@ -1003,6 +1003,10 @@ button:hover {
   padding: 0.5rem;
 }
 
+.p-4 {
+  padding: 1rem;
+}
+
 .px-1 {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
@@ -1256,7 +1260,6 @@ button:disabled {
 
 .obox {
   background-color: var(--input-background);
-  margin: 1rem;
   border-radius: 0.5rem;
   padding: 1rem;
 }

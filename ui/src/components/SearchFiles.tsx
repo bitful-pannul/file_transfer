@@ -79,7 +79,7 @@ const SearchFiles = function() {
     return (
         <div className='flex flex-col grow'>
             <h3 className='text-center mb-4'>Search files on the network</h3>
-            <div className='flex place-items-center self-stretch'>
+            <div className='flex place-items-center self-stretch mb-4'>
                 <div className='flex grow place-items-center relative'>
                     <span className='mr-2'>Node:</span>
                     <input

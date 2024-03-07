@@ -203,5 +203,5 @@ button:disabled {
 
 .obox {
   background-color: var(--input-background);
-  @apply rounded-lg p-4 m-4;
+  @apply rounded-lg p-4;
 }
