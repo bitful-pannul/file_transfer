@@ -17,11 +17,6 @@
   src: url('./assets/fonts/BarlowCondensed-Black.ttf');
 }
 
-@font-face {
-  font-family: 'Iosevka';
-  src: url('./assets/fonts/Iosevka-Regular.ttf');
-}
-
 @layer components {
   .heading {
     font-family: OpenSans;

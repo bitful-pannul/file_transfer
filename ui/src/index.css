@@ -135,7 +135,7 @@ code,
 kbd,
 samp,
 pre {
-  font-family: Iosevka, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   /* 1 */
   font-feature-settings: normal;
   /* 2 */
@@ -1060,7 +1060,7 @@ button:hover {
 }
 
 .font-mono {
-  font-family: Iosevka, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .text-6xl {
@@ -1125,12 +1125,6 @@ button:hover {
   font-family: 'Barlow';
 
   src: url('./assets/fonts/BarlowCondensed-Black.ttf');
-}
-
-@font-face {
-  font-family: 'Iosevka';
-
-  src: url('./assets/fonts/Iosevka-Regular.ttf');
 }
 
 /*
