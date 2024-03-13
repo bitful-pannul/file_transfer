@@ -7,7 +7,8 @@
         "request_capabilities": [
             "net:distro:sys",
             "vfs:distro:sys",
-            "http_server:distro:sys"
+            "http_server:distro:sys",
+            "homepage:homepage:sys"
         ],
         "grant_capabilities": [],
         "public": true

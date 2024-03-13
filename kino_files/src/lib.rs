@@ -20,6 +20,8 @@ wit_bindgen::generate!({
     },
 });
 
+const ICON: &str = include_str!("icon");
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NodePermission {
     node: String,
@@ -598,6 +600,23 @@ impl Guest for Component {
             .unwrap_or(empty_state());
         set_state(&serde_json::to_vec(&state).unwrap_or(vec![]));
         let files_dir = open_dir(&drive_path, false, None).unwrap();
+
+        // add ourselves to the homepage
+        Request::to(("our", "homepage", "homepage", "sys"))
+        .body(
+            serde_json::json!({
+                "Add": {
+                    "label": "Kino Files",
+                    "icon": ICON,
+                    "path": "/", // just our root
+                }
+            })
+            .to_string()
+            .as_bytes()
+            .to_vec(),
+        )
+        .send()
+        .unwrap();
 
         serve_ui(&our, &"ui", true, false, vec!["/"]).unwrap();
         bind_http_path("/files", false, false).unwrap();
