@@ -69,7 +69,7 @@ fn ls_files(source: &Address, our: &Address, files_dir: &Directory) -> anyhow::R
                 return None;
             }
             match file.file_type {
-                FileType::File => match metadata(&file.path) {
+                FileType::File => match metadata(&file.path, None) {
                     Ok(metadata) => Some(KinoFileInfo {
                         name: file.path.clone(),
                         size: metadata.len,
@@ -80,7 +80,7 @@ fn ls_files(source: &Address, our: &Address, files_dir: &Directory) -> anyhow::R
                 FileType::Directory => Some(KinoFileInfo {
                     name: file.path.clone(),
                     size: 0,
-                    dir: Some(ls_files(source, our, &open_dir(&file.path, false).unwrap()).unwrap()),
+                    dir: Some(ls_files(source, our, &open_dir(&file.path, false, None).unwrap()).unwrap()),
                 }),
                 _ => None,
             }
@@ -247,11 +247,11 @@ fn handle_kinofiles_request(
                 return Ok(());
             }
             println!("kino_files: deleting file: {}", name);
-            let meta = metadata(&name)?;
+            let meta = metadata(&name, None)?;
             if meta.file_type == FileType::Directory {
-                remove_dir(&name)?;
+                remove_dir(&name, None)?;
             } else {
-                remove_file(&name)?;
+                remove_file(&name, None)?;
             }
             push_file_update_via_ws(channel_id);
         }
@@ -261,7 +261,7 @@ fn handle_kinofiles_request(
             }
             let path = format!("{}/{}", files_dir.path, name);
             println!("kino_files: creating directory: {}", path);
-            open_dir(&path, true)?;
+            open_dir(&path, true, None)?;
             push_file_update_via_ws(channel_id);
         }
         KinoRequest::Move { source_path, target_path } => {
@@ -274,10 +274,10 @@ fn handle_kinofiles_request(
             if dest_path == source_path {
                 return Ok(());
             }
-            let file = open_file(&source_path, false)?;
-            let dest_file = create_file(&dest_path)?;
+            let file = open_file(&source_path, false, None)?;
+            let dest_file = create_file(&dest_path, None)?;
             dest_file.write(&file.read()?)?;
-            remove_file(&source_path)?;
+            remove_file(&source_path, None)?;
             push_file_update_via_ws(channel_id);
         }
         KinoRequest::ChangePermissions { path, perm } => {
@@ -362,7 +362,7 @@ fn handle_http_request(
                             return Ok(());
                         }
                         
-                        if let Ok(file) = open_file(&path, false) {
+                        if let Ok(file) = open_file(&path, false, None) {
                             let mut headers = HashMap::new();
                             headers.insert("Content-Type".to_string(), "application/octet-stream".to_string());
                             if let Ok(contents) = file.read() {
@@ -418,7 +418,7 @@ fn handle_http_request(
                             field.data.read_to_end(&mut buffer)?;
                             println!("kino_files: uploaded file {} with size {}", filename, buffer.len());
                             let file_path = format!("{}/{}", files_dir.path, filename);
-                            let file = create_file(&file_path)?;
+                            let file = create_file(&file_path, None)?;
                             file.write(&buffer)?;
 
                             let ws_blob = LazyLoadBlob {
@@ -593,11 +593,11 @@ impl Guest for Component {
         println!("kino_files: begin");
 
         let our = Address::from_str(&our).unwrap();
-        let drive_path = create_drive(our.package_id(), "files").unwrap();
+        let drive_path = create_drive(our.package_id(), "files", None).unwrap();
         let state = get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?))
             .unwrap_or(empty_state());
         set_state(&serde_json::to_vec(&state).unwrap_or(vec![]));
-        let files_dir = open_dir(&drive_path, false).unwrap();
+        let files_dir = open_dir(&drive_path, false, None).unwrap();
 
         serve_ui(&our, &"ui", true, false, vec!["/"]).unwrap();
         bind_http_path("/files", false, false).unwrap();

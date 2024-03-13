@@ -59,7 +59,7 @@ fn handle_message(
 
                     // open/create empty file in both cases.
                     let mut active_file =
-                        open_file(&format!("{}/{}", files_dir.path, &name), true)?;
+                        open_file(&format!("{}/{}", files_dir.path, &name), true, None)?;
 
                     match target_worker {
                         Some(target_worker) => {
@@ -174,7 +174,7 @@ impl Guest for Component {
         let our = Address::from_str(&our).unwrap();
 
         let drive_path = format!("{}/files", our.package_id());
-        let files_dir = open_dir(&drive_path, false).unwrap();
+        let files_dir = open_dir(&drive_path, false, None).unwrap();
 
         let mut file: Option<File> = None;
         let mut size: Option<u64> = None;
