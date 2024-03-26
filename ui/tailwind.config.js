@@ -8,6 +8,7 @@ export default {
         'black': '#22211F',
         'orange': '#F35422',
         'transparent': 'transparent',
+        'gray': '#7E7E7E'
       }
     },
     fontFamily: {

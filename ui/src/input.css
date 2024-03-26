@@ -29,8 +29,13 @@
     letter-spacing: 0.25em;
     text-transform: uppercase;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply heading;
   }
 
@@ -65,7 +70,7 @@
   .clear {
     @apply bg-transparent border-transparent font-bold hover:bg-white/25 font-['Barlow'];
   }
-  
+
   .alt {
     @apply bg-white text-black border-white;
   }
@@ -75,11 +80,7 @@
   }
 
   .icon {
-    @apply 
-      flex items-center place-content-center 
-      bg-transparent 
-      w-11 p-3 text-[14px] 
-      rounded-full border-white/25;
+    @apply flex items-center place-content-center bg-transparent w-11 p-3 text-[14px] rounded-full border-white/25;
   }
 
   .icon.alt {
@@ -91,8 +92,8 @@
 /*
  * draggable file tree style overrides 
  */
-.rstcustom__node > div {
- display: flex;
+.rstcustom__node>div {
+  display: flex;
 }
 
 .rstcustom__expandButton,
@@ -104,7 +105,8 @@
   flex-grow: 1 !important;
 }
 
-.rstcustom__rowWrapper, .rstcustom__row {
+.rstcustom__rowWrapper,
+.rstcustom__row {
   flex-grow: 1;
 }
 
@@ -112,91 +114,70 @@
   opacity: 1 !important;
 }
 
-:root {
-  --text-light: #FFF5D9;
-  --text-dark: #22211F;
-  --text-orange: #FF7533;
-  --orange-light: #F36822;
-  --orange-medium: #F35422;
-  --orange-burnt: #E25F35;
-
-  --medium-gray: 7E7E7E;
-  --gray-button: #fdf5dc40;
-  --input-background: rgba(243, 84, 34, 0.25); /* orange-medium */
-}
 
 body {
-  background-color: var(--gray-button);
-  color: var(--text-light);
-  background: url('./assets/background.jpg') no-repeat center center fixed;
-  background-size: cover;
+  @apply bg-[url('./assets/background.jpg')] bg-cover bg-no-repeat bg-center bg-fixed text-white;
 }
 
 input {
   all: unset;
 }
+
 select,
 input[type="text"],
 input[type="password"],
 input[type="checkbox"] {
-  padding: 0.5em 1.5em;
-  border: 2px solid var(--orange-medium);
-  border-radius: 8px;
-  background-color: var(--input-background);
-  color: var(--text-light);
+  @apply px-4 py-2 rounded-lg bg-orange bg-opacity-25 text-white border border-orange border-2;
 }
+
 input[type="text"],
 input[type="password"] {
   @apply w-full;
 }
+
 input[type="checkbox"] {
-  padding: 0.25em 0.8em;
-  cursor: pointer;
+  @apply w-6 h-6 cursor-pointer px-2 py-1;
 }
+
 input[type="checkbox"]:checked {
-  background-color: var(--orange-medium);
+  @apply bg-orange;
 }
+
 .checkmark {
-  position: absolute;
-  left: 4px;
-  font-size: 24px;
-  top: -5px;
-  cursor: pointer;
+  @apply absolute left-4 text-xl -top-1 cursor-pointer;
 }
+
 ::placeholder {
-  color: var(--text-light) !important;
+  @apply !text-white;
 }
+
 ::-webkit-input-placeholder::placeholder {
-  color: var(--text-light) !important;
+  @apply !text-white;
 }
+
 ::-moz-placeholder::placeholder {
-  color: var(--text-light) !important;
+  @apply !text-white;
 }
+
 ::-ms-input-placeholder {
-  color: var(--text-light) !important;
+  @apply !text-white;
 }
+
 select {
-  @apply appearance-none;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23ffffff" d="M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6z"/></svg>');
   background-repeat: no-repeat;
   background-position: right 1.25rem center;
-  padding-right: 3em;
+  @apply appearance-none pr-16;
 }
 
 button:hover {
-  opacity: 0.9;
-  box-shadow: none;
+  @apply opacity-90 shadow-none;
 }
 
 button:disabled {
-  background-color: var(--medium-gray);
-  border: 1px solid var(--medium-gray);
-  box-shadow: 0 1px 2px var(--medium-gray);
-  opacity: 0.7;
-  cursor: not-allowed;
+  @apply opacity-70 cursor-not-allowed bg-gray border-gray;
 }
 
 .obox {
-  background-color: var(--input-background);
-  @apply rounded-lg p-4;
+  @apply rounded-lg p-4 bg-orange/25;
 }
