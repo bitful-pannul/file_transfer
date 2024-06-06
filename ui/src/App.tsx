@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import './App.css'
 import MyFiles from './components/MyFiles'
 import KinodeEncryptorApi from '@kinode/client-api'
 import useFileTransferStore from './store/fileTransferStore';
@@ -13,7 +12,7 @@ declare global {
   var our: { node: string, process: string };
 }
 
-let inited = false 
+let inited = false
 
 function App() {
   const { files, handleWsMessage, setApi, refreshFiles, permissionsModalOpen, } = useFileTransferStore();
@@ -21,8 +20,8 @@ function App() {
   const BASE_URL = import.meta.env.BASE_URL;
   const PROXY_TARGET = `${(import.meta.env.VITE_NODE_URL || "http://localhost:8080")}${BASE_URL}`;
   const WEBSOCKET_URL = import.meta.env.DEV
-  ? `${PROXY_TARGET.replace('http', 'ws')}`
-  : undefined;
+    ? `${PROXY_TARGET.replace('http', 'ws')}`
+    : undefined;
 
   if (window.our) window.our.process = BASE_URL?.replace("/", "");
 
@@ -39,7 +38,7 @@ function App() {
 
       setApi(api);
     }
-  }, []) 
+  }, [])
 
   useEffect(() => {
     refreshFiles()

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import UnoCSS from 'unocss/vite'
 
 /*
 If you are developing a UI outside of an Uqbar project,
@@ -21,7 +22,10 @@ const PROXY_URL = (process.env.VITE_NODE_URL || 'http://127.0.0.1:8080').replace
 console.log('process.env.VITE_NODE_URL', process.env.VITE_NODE_URL, PROXY_URL);
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    UnoCSS(),
+    react(),
+  ],
   base: BASE_URL,
   build: {
     rollupOptions: {

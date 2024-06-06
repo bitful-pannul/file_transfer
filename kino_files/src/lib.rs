@@ -1,6 +1,5 @@
-use kinode::process::standard::get_blob;
 use kinode_process_lib::{
-    await_message, get_typed_state, http::{
+    await_message, get_typed_state, get_blob, call_init, http::{
         bind_http_path, bind_ws_path, send_response, send_ws_push, serve_ui, HttpServerRequest,
         StatusCode, WsMessageType,
     }, our_capabilities, print_to_terminal, println, set_state, spawn, vfs::{
@@ -13,11 +12,8 @@ use std::io::{Cursor, Read};
 use std::str::FromStr;
 
 wit_bindgen::generate!({
-    path: "wit",
+    path: "target/wit",
     world: "process",
-    exports: {
-        world: Component,
-    },
 });
 
 const ICON: &str = include_str!("icon");
@@ -589,49 +585,46 @@ fn empty_state() -> FileTransferState {
     }
 }
 
-struct Component;
-impl Guest for Component {
-    fn init(our: String) {
-        println!("kino_files: begin");
+call_init!(init);
+fn init(our: Address) {
+    println!("kino_files: begin");
 
-        let our = Address::from_str(&our).unwrap();
-        let drive_path = create_drive(our.package_id(), "files", None).unwrap();
-        let state = get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?))
-            .unwrap_or(empty_state());
-        set_state(&serde_json::to_vec(&state).unwrap_or(vec![]));
-        let files_dir = open_dir(&drive_path, false, None).unwrap();
+    let drive_path = create_drive(our.package_id(), "files", None).unwrap();
+    let state = get_typed_state(|bytes| Ok(serde_json::from_slice::<FileTransferState>(&bytes)?))
+        .unwrap_or(empty_state());
+    set_state(&serde_json::to_vec(&state).unwrap_or(vec![]));
+    let files_dir = open_dir(&drive_path, false, None).unwrap();
 
-        // add ourselves to the homepage
-        Request::to(("our", "homepage", "homepage", "sys"))
-        .body(
-            serde_json::json!({
-                "Add": {
-                    "label": "Kino Files",
-                    "icon": ICON,
-                    "path": "/", // just our root
-                }
-            })
-            .to_string()
-            .as_bytes()
-            .to_vec(),
-        )
-        .send()
-        .unwrap();
+    // add ourselves to the homepage
+    Request::to(("our", "homepage", "homepage", "sys"))
+    .body(
+        serde_json::json!({
+            "Add": {
+                "label": "Kino Files",
+                "icon": ICON,
+                "path": "/", // just our root
+            }
+        })
+        .to_string()
+        .as_bytes()
+        .to_vec(),
+    )
+    .send()
+    .unwrap();
 
-        serve_ui(&our, &"ui", true, false, vec!["/"]).unwrap();
-        bind_http_path("/files", false, false).unwrap();
-        bind_ws_path("/", false, false).unwrap();
+    serve_ui(&our, &"ui", true, false, vec!["/"]).unwrap();
+    bind_http_path("/files", false, false).unwrap();
+    bind_ws_path("/", false, false).unwrap();
 
-        let mut channel_id: u32 = 1854;
+    let mut channel_id: u32 = 1854;
 
-        loop {
-            match handle_message(&our, &files_dir, &mut channel_id) {
-                Ok(()) => {}
-                Err(e) => {
-                    print_to_terminal(2, format!("kino_files: error: {:?}", e).as_str());
-                    push_error_via_ws(&mut channel_id, e.to_string());
-                }
-            };
-        }
+    loop {
+        match handle_message(&our, &files_dir, &mut channel_id) {
+            Ok(()) => {}
+            Err(e) => {
+                print_to_terminal(2, format!("kino_files: error: {:?}", e).as_str());
+                push_error_via_ws(&mut channel_id, e.to_string());
+            }
+        };
     }
 }
