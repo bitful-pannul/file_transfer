@@ -10,3 +10,4 @@ pkg/ui
 ui/dist
 ui/node_modules
 node_modules
+pkg/api.zip
